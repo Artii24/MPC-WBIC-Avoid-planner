@@ -114,7 +114,29 @@ T LinearInterpolation(T initPos, T targetPos, double rate)
 template<typename T>
 void FSM_State_Testing_Cv<T>::run()
 {
+  _checkMapPublishers();
   LocomotionControlStep();
+}
+
+template<typename T>
+void FSM_State_Testing_Cv<T>::_checkMapPublishers()
+{
+  // ROS_INFO_STREAM_THROTTLE(2, "Publishers raw, filter, plane : " << _map_raw_sub.getNumPublishers() << " "
+  //                                                                << _map_sub.getNumPublishers() << " "
+  //                                                                << _map_plane_sub.getNumPublishers());
+  if (_map_plane_sub.getNumPublishers() == 0 && _map_raw_sub.getNumPublishers() == 0 && _map_sub.getNumPublishers() == 0)
+  {
+    if (this->_data->staticParams->use_vision)
+      ROS_WARN_STREAM("There is no map publishers!! Turn to blind walking");
+    this->_data->staticParams->use_vision = false;
+  }
+  else if (_map_plane_sub.getNumPublishers() > 0 && _map_raw_sub.getNumPublishers() > 0 && _map_sub.getNumPublishers() > 0)
+  {
+    if (!this->_data->staticParams->use_vision)
+      ROS_WARN_STREAM("Detected map publishers!! Turn to perceptive walking");
+    if (_grid_map.getSize()(0) && _grid_map_plane.getSize()(0) && _grid_map_plane.getSize()(0))
+      this->_data->staticParams->use_vision = true;
+  }
 }
 
 template<typename T>

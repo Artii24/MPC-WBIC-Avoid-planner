@@ -58,7 +58,7 @@ dynamic_loader:
   Kd_cartesian_1: 15
   Kd_cartesian_2: 15
 
-  body_height: 0.33
+  body_height: 0.28
   Swing_traj_height  : 0.17   # Set swing traj top point
 
   # safety
@@ -91,6 +91,7 @@ static_params:
   controller_dt     : 0.002
   cheater_mode      : false
   horizon           : 16
+  use_vision        : false
 
   # Estimators
   foot_height_sensor_noise      :  0.001

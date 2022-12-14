@@ -145,6 +145,20 @@ void CMPCLocomotion_Cv::_SetupCommand(float cmd_vel_x, float cmd_vel_y)
 
   Kd = Vec3<float>(_parameters->Kd_cartesian_0, _parameters->Kd_cartesian_1, _parameters->Kd_cartesian_2).asDiagonal();
   Kd_stance = Kd;
+
+  if (_data->gamepad_command->triangle && (_data->userParameters->cmpc_gait == 15))
+  {
+    _data->gamepad_command->stairs_mode = StairsMode::UP;
+    _body_height = 0.29;
+    _data->userParameters->Swing_traj_height = 0.17;
+  }
+
+  if (_data->gamepad_command->cross && (_data->userParameters->cmpc_gait == 15))
+  {
+    _data->gamepad_command->stairs_mode = StairsMode::DOWN;
+    _body_height = 0.20;
+    _data->userParameters->Swing_traj_height = 0.06;
+  }
 }
 
 void CMPCLocomotion_Cv::run(ControlFSMData<float>& data)
@@ -271,8 +285,10 @@ void CMPCLocomotion_Cv::myVersion(ControlFSMData<float>& data)
 
     for (int i = 0; i < 4; i++)
     {
-      // footSwingTrajectories[i].setHeight(_data->userParameters->Swing_traj_height);
-      footSwingTrajectories[i].setHeight(_updateTrajHeight(i));
+      if (_data->staticParams->use_vision)
+        footSwingTrajectories[i].setHeight(_updateTrajHeight(i));
+      else
+        footSwingTrajectories[i].setHeight(_data->userParameters->Swing_traj_height);
 
       footSwingTrajectories[i].setInitialPosition(pFoot[i]);
       data.debug->all_legs_info.leg[i].swing_ps.x = pFoot[i](0);
@@ -987,8 +1003,10 @@ void CMPCLocomotion_Cv::_findPF(Vec3<float>& v_des_world, size_t foot)
     swingTimeRemaining[foot] -= dt;
   }
 
-  // footSwingTrajectories[foot].setHeight(_data->userParameters->Swing_traj_height);
-  footSwingTrajectories[foot].setHeight(_updateTrajHeight(foot));
+  if (_data->staticParams->use_vision)
+    footSwingTrajectories[foot].setHeight(_updateTrajHeight(foot));
+  else
+    footSwingTrajectories[foot].setHeight(_data->userParameters->Swing_traj_height);
 
   Vec3<float> offset(0, side_sign[foot] * _data->quadruped->_abadLinkLength, 0);
 
@@ -1018,8 +1036,10 @@ void CMPCLocomotion_Cv::_findPF(Vec3<float>& v_des_world, size_t foot)
   Pf[0] += pfx_rel;
   Pf[1] += pfy_rel;
   Pf[2] = 0.0;
-
-  _updateFoothold(Pf, seResult.position, foot);
+  if (_data->staticParams->use_vision)
+  {
+    _updateFoothold(Pf, seResult.position, foot);
+  }
   footSwingTrajectories[foot].setFinalPosition(Pf);
   // _data->debug->all_legs_info.leg[foot].swing_pf.x = Pf(0);
   // _data->debug->all_legs_info.leg[foot].swing_pf.y = Pf(1);

@@ -70,6 +70,7 @@ private:
   void _elevMapCallback(const grid_map_msgs::GridMapConstPtr& msg);
   void _elevMapRawCallback(const grid_map_msgs::GridMapConstPtr& msg);
   void _elevMapPlaneCallback(const grid_map_msgs::GridMapConstPtr& msg);
+  void _checkMapPublishers();
 
   bool firstSwing[4];
   Vec3<float> pFoot[4];
