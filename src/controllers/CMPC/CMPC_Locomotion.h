@@ -10,6 +10,7 @@
 #include <nav_msgs/Path.h>
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
+#include <Utilities/Timer.h>
 
 #include <cstdio>
 
@@ -119,6 +120,9 @@ public:
   Vec3<float> Fr_des[4];
 
   Vec4<float> contact_state;
+
+  Timer stand_timer;
+  bool _is_stand_transition = false;
 
 private:
   void _SetupCommand(ControlFSMData<float>& data);

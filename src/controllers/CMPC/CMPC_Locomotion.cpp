@@ -129,15 +129,15 @@ void CMPCLocomotion::_SetupCommand(ControlFSMData<float>& data)
     _yaw_des += dt * _yaw_turn_rate;
   }
 
-  if (current_gait == 13 || current_gait == 4 || current_gait == 11)
-  {
-    world_position_desired[0] = stand_traj[0] + 0.05 * data.gamepad_command->left_stick_analog[1];
-    world_position_desired[1] = stand_traj[1] + 0.05 * data.gamepad_command->left_stick_analog[0];
-    _body_height = stand_traj[2];
+  // if (current_gait == 13 || current_gait == 4 || current_gait == 11)
+  // {
+  //   world_position_desired[0] = stand_traj[0] + 0.05 * data.gamepad_command->left_stick_analog[1];
+  //   world_position_desired[1] = stand_traj[1] + 0.05 * data.gamepad_command->left_stick_analog[0];
+  //   _body_height = stand_traj[2];
 
-    _pitch_des = 0.2 * data.gamepad_command->right_stick_analog[1];
-    _yaw_des = stand_traj[5] + 0.2 * data.gamepad_command->right_stick_analog[0];
-  }
+  //   _pitch_des = 0.2 * data.gamepad_command->right_stick_analog[1];
+  //   _yaw_des = stand_traj[5] + 0.2 * data.gamepad_command->right_stick_analog[0];
+  // }
 
   _body_height = _parameters->body_height;
   _swing_trajectory_height = _parameters->Swing_traj_height;
@@ -145,14 +145,14 @@ void CMPCLocomotion::_SetupCommand(ControlFSMData<float>& data)
   if (data.gamepad_command->triangle && (gaitNumber == 15))
   {
     data.gamepad_command->stairs_mode = StairsMode::UP;
-    _body_height = 0.28;
+    _body_height = 0.29;
     _swing_trajectory_height = 0.17;
   }
 
   if (data.gamepad_command->cross && (gaitNumber == 15))
   {
     data.gamepad_command->stairs_mode = StairsMode::DOWN;
-    _body_height = 0.25;
+    _body_height = 0.20;
     _swing_trajectory_height = 0.06;
   }
 
@@ -258,9 +258,9 @@ void CMPCLocomotion::myVersion(ControlFSMData<float>& data)
   }
 
   // gait->updatePeriod(_parameters->gait_period);
-  gait->restoreDefaults();
+  // gait->restoreDefaults();
   gait->setIterations(iterationsBetweenMPC, iterationCounter);
-  gait->earlyContactHandle(data.stateEstimator->getContactSensorData(), iterationsBetweenMPC, iterationCounter);
+  // gait->earlyContactHandle(data.stateEstimator->getContactSensorData(), iterationsBetweenMPC, iterationCounter);
 
   recompute_timing(default_iterations_between_mpc);
 
@@ -632,10 +632,54 @@ void CMPCLocomotion::myNewVersion(ControlFSMData<float>& data)
     gait = &standing;
   }
 
+  float vx_des = data.gamepad_command->left_stick_analog[1];
+  float vy_des = data.gamepad_command->left_stick_analog[0];
+  float omega_yaw_des = data.gamepad_command->right_stick_analog[0];
+
+  if ((abs(vx_des) < 0.05) && (abs(vy_des) < 0.05) && (abs(omega_yaw_des) < 0.05))
+  {
+    if (_is_stand_transition == false)
+    {
+      stand_timer.start();
+      _is_stand_transition = true;
+    }
+
+    world_position_desired[2] = _body_height;
+
+    uint8_t num_contacts = 0;
+
+    for (size_t i = 0; i < 4; i++)
+    {
+      if (data.stateEstimator->getContactSensorData()(i) > 0)
+      {
+        num_contacts++;
+      }
+    }
+
+    if ((stand_timer.getMs() > 1500) && (num_contacts == 4))
+    {
+      gait = &standing;
+      current_gait = 4;
+
+      _x_vel_des = 0;
+      _y_vel_des = 0;
+
+      world_position_desired[0] = seResult.position[0];
+      world_position_desired[1] = seResult.position[1];
+      world_position_desired[2] = _body_height;
+
+      _yaw_des = seResult.rpy[2];
+    }
+  }
+  else
+  {
+    _is_stand_transition = false;
+  }
+
   // gait->updatePeriod(_dyn_params->gait_period);
-  gait->restoreDefaults();
+  // gait->restoreDefaults();
   gait->setIterations(iterationsBetweenMPC, iterationCounter);
-  gait->earlyContactHandle(seResult.contactSensor, iterationsBetweenMPC, iterationCounter);
+  // gait->earlyContactHandle(seResult.contactSensor, iterationsBetweenMPC, iterationCounter);
 
   recompute_timing(default_iterations_between_mpc);
 
@@ -654,11 +698,6 @@ void CMPCLocomotion::myNewVersion(ControlFSMData<float>& data)
     rpy_int[0] += dt * (_roll_des - seResult.rpy[0]) / v_robot[1];
   }
 
-  rpy_int[0] = fminf(fmaxf(rpy_int[0], -.25), .25);
-  rpy_int[1] = fminf(fmaxf(rpy_int[1], -.25), .25);
-  rpy_comp[1] = v_robot[0] * rpy_int[1];
-  rpy_comp[0] = v_robot[1] * rpy_int[0] * (gaitNumber != 8); // turn off for pronking
-
   static float z_des[4] = { 0 };
 
   if (current_gait == 4 || current_gait == 13)
@@ -668,7 +707,8 @@ void CMPCLocomotion::myNewVersion(ControlFSMData<float>& data)
   else if (current_gait != 11)
   {
     // estimated pitch of plane and pitch correction depends on Vdes
-    _pitch_des = pitch_cmd + data.stateEstimator->getResult().rpy[1] + data.stateEstimator->getResult().est_pitch_plane + 0.1;
+    // _pitch_des = pitch_cmd + data.stateEstimator->getResult().rpy[1] + data.stateEstimator->getResult().est_pitch_plane + 0.1;
+    _pitch_des = pitch_cmd + data.stateEstimator->getResult().rpy[1] + data.stateEstimator->getResult().est_pitch_plane;
 
     if (_x_vel_des > 0)
     {
@@ -743,7 +783,7 @@ void CMPCLocomotion::myNewVersion(ControlFSMData<float>& data)
 
     footSwingTrajectories[i].setHeight(_swing_trajectory_height);
 
-    Vec3<float> offset(0, side_sign[i] * data.quadruped->_abadLinkLength, 0);
+    Vec3<float> offset(0, side_sign[i] * (data.quadruped->_abadLinkLength), 0);
 
     Vec3<float> pRobotFrame = (data.quadruped->getHipLocation(i) + offset);
 
@@ -821,6 +861,9 @@ void CMPCLocomotion::myNewVersion(ControlFSMData<float>& data)
         firstSwing[foot] = false;
         is_stance[foot] = 0;
         footSwingTrajectories[foot].setInitialPosition(pFoot[foot]);
+        data.debug->all_legs_info.leg[foot].swing_ps.x = pFoot[foot](0);
+        data.debug->all_legs_info.leg[foot].swing_ps.y = pFoot[foot](1);
+        data.debug->all_legs_info.leg[foot].swing_ps.z = pFoot[foot](2);
 
         z_des[foot] = pFoot[foot][2];
       }
@@ -941,10 +984,8 @@ void CMPCLocomotion::myNewVersion(ControlFSMData<float>& data)
 
   aBody_des.setZero();
 
-  // pBody_RPY_des[0] = 0.;
+  pBody_RPY_des[0] = 0.;
   pBody_RPY_des[1] = _pitch_des;
-  pBody_RPY_des[0] = rpy_comp[0];
-  // pBody_RPY_des[1] = rpy_comp[1];
   pBody_RPY_des[2] = _yaw_des;
 
   vBody_Ori_des[0] = 0.;
