@@ -45,19 +45,19 @@ enum class FSM_OperatingMode
 template<typename T>
 struct FSM_StatesList
 {
-  FSM_State<T>* invalid;
-  FSM_State_Passive<T>* passive;
-  FSM_State_StandUp<T>* standUp;
-  FSM_State_Locomotion<T>* locomotion;
-  FSM_State_BalanceStand<T>* balanceStand;
-  FSM_State_LayDown<T>* laydown;
-  FSM_State_Vision<T>* vision;
-  FSM_State_Testing<T>* testing;
-  FSM_State_RecoveryStand<T>* recoveryStand;
-  FSM_State_BackFlip<T>* backflip;
-  FSM_State_BalanceVBL<T>* balance_vbl;
-  FSM_State_Testing_Cv<T>* testingCV;
+  FSM_State<T>* invalid = nullptr;
+  FSM_State_Passive<T>* passive = nullptr;
+  FSM_State_StandUp<T>* standUp = nullptr;
+  FSM_State_Locomotion<T>* locomotion = nullptr;
+  FSM_State_BalanceStand<T>* balanceStand = nullptr;
+  FSM_State_LayDown<T>* laydown = nullptr;
+  FSM_State_Testing<T>* testing = nullptr;
+  FSM_State_RecoveryStand<T>* recoveryStand = nullptr;
+  FSM_State_BalanceVBL<T>* balance_vbl = nullptr;
+  FSM_State_Testing_Cv<T>* testingCV = nullptr;
 
+  // FSM_State_Vision<T>* vision= nullptr;
+  // FSM_State_BackFlip<T>* backflip= nullptr;
   // FSM_State_JointPD<T>* jointPD;
   // FSM_State_ImpedanceControl<T>* impedanceControl;
   // FSM_State_FrontJump<T>* frontJump;

@@ -65,8 +65,6 @@ CMPCLocomotion_Cv::CMPCLocomotion_Cv(float _dt, int _iterations_between_mpc, Con
     firstSwing[i] = true;
   }
 
-  // _initSparseMPC();
-
   pBody_des.setZero();
   vBody_des.setZero();
   aBody_des.setZero();
@@ -115,9 +113,6 @@ void CMPCLocomotion_Cv::_SetupCommand(float cmd_vel_x, float cmd_vel_y)
   _x_vel_des = _x_vel_des * (1 - filter_x) + x_vel_cmd * filter_x;
   _y_vel_des = _y_vel_des * (1 - filter_y) + y_vel_cmd * filter_y;
 
-  // _yaw_des = _data->stateEstimator->getResult().rpy[2] + dt * _yaw_turn_rate;
-  // _yaw_des += dt * _yaw_turn_rate;
-
   if ((M_PI - abs(_yaw_des)) <= 0.1)
   {
     _yaw_des = _data->stateEstimator->getResult().rpy[2] + dt * _yaw_turn_rate;
@@ -163,23 +158,10 @@ void CMPCLocomotion_Cv::_SetupCommand(float cmd_vel_x, float cmd_vel_y)
 
 void CMPCLocomotion_Cv::run(ControlFSMData<float>& data)
 {
-  // myVersion(data, _grid_map_filter, _grid_map_raw, _grid_map_plane);
-}
-
-void CMPCLocomotion_Cv::myVersion(ControlFSMData<float>& data)
-{
   bool omniMode = false;
-  // long_step_vel = _data->userParameters->cmpc_use_sparse;
-  // long_step_trigger = _data->userParameters->cmpc_use_sparse;
 
   // Command Setup
-  // if (!long_step_vel)
   _SetupCommand(_data->gamepad_command->left_stick_analog[1], _data->gamepad_command->left_stick_analog[0]);
-  // else
-  // {
-  //   std::vector<float> vel = calcDesVel();
-  //   _SetupCommand(vel[0], vel[1]);
-  // }
   _gait_des = data.userParameters->cmpc_gait;
 
   auto& seResult = data.stateEstimator->getResult();
@@ -214,6 +196,7 @@ void CMPCLocomotion_Cv::myVersion(ControlFSMData<float>& data)
     _gait = &standing;
   }
 
+  // Early contact init
   // _gait->updatePeriod(_dyn_params->gait_period);
   // _gait->restoreDefaults();
   _gait->setIterations(iterationsBetweenMPC, iterationCounter);
@@ -370,15 +353,6 @@ void CMPCLocomotion_Cv::myVersion(ControlFSMData<float>& data)
       }
 
       // Update PF
-      // if (!long_step_vel)
-      //{
-      // Vec3<float> pf = footSwingTrajectories[foot].getFinalPosition();
-      // _updateFoothold(pf, seResult.position, foot);
-      // footSwingTrajectories[foot].setFinalPosition(pf);
-      // data.debug->all_legs_info.leg[foot].swing_pf.x = pf(0);
-      // data.debug->all_legs_info.leg[foot].swing_pf.y = pf(1);
-      // data.debug->all_legs_info.leg[foot].swing_pf.z = pf(2);
-      //}
 
       // for visual -----------------------------------------------------------------------
       geometry_msgs::PoseStamped pose_traj;
@@ -815,8 +789,6 @@ void CMPCLocomotion_Cv::_updateFoothold(Vec3<float>& pf, const Vec3<float>& body
   local_p0 = p0 - body_pos;
   first = true;
   // }
-  //  Vec3<float> local_pf_scaled = foot.cwiseProduct(scale) - body_pos;
-  //  std::cout << "pf in base frame: " << std::endl << local_pf << std::endl;
 
   // Координаты цм робота на карте (обычно в центре)
   int row_idx_body_com = _grid_map_raw.getSize()(0) / 2;
@@ -850,44 +822,6 @@ void CMPCLocomotion_Cv::_updateFoothold(Vec3<float>& pf, const Vec3<float>& body
   pf[0] = (col_idx_body_com - x_idx_selected) * _grid_map_raw.getResolution() + body_pos[0];
   pf[1] = (row_idx_body_com - y_idx_selected) * _grid_map_raw.getResolution() + body_pos[1];
   auto pf_h = _grid_map_raw.at("elevation", checkBoundariess(_grid_map_raw, x_idx_selected, y_idx_selected));
-  if (leg == 3)
-  {
-    ROS_INFO_STREAM_THROTTLE(1, " Leg 3 height map = " << pf_h);
-  }
-  // check map on flat terrain
-  // static std::vector<float> pf_buffer;
-  // if (!std::isnan(pf_h) && pf_buffer.size() < 4000)
-  // {
-  //   pf_buffer.push_back(pf_h);
-  // }
-  // else
-  // {
-  //   double sum = 0.0;
-  //   for (auto it : pf_buffer)
-  //   {
-  //     sum += it;
-  //   }
-  //   cout << "Mean pf = " << sum / pf_buffer.size() << endl;
-  //   pf_buffer.clear();
-  // }
-  // _max_cell =
-  //   _findMaxInMapByLine(height_map_filter, grid_map::Index(x_idx_selected, y_idx_selected), grid_map::Index(p0_x_idx,
-  //   p0_y_idx));
-
-  // cout << "max cell = " << _max_cell << endl;
-
-  // ЕВРИСТИКА
-  // static double start_offset = 0.6;
-  // if (_data->stateEstimator->getResult().position(0) > start_offset)
-  // {
-  //   static double step_length = 0.8;
-  //   double x = _data->stateEstimator->getResult().position(0) - start_offset;
-  //   double k = x / step_length;
-  //   if (k >= 1.0)
-  //     k = 1.0;
-  //   _data->debug->z_offset = k * 0.40;
-  // }
-  // _body_height_heuristics("vio");
 
   pf_h -= p0_h;
   pf[2] = (std::isnan(pf_h)) ? 0.0 : pf_h;
@@ -934,26 +868,15 @@ void CMPCLocomotion_Cv::_idxMapChecking(Vec3<float>& pf,
                                         const int& leg)
 {
   grid_map::Index center(x_idx, y_idx);
-  // std::cout << " Leg position (x,y) " << pf[0] << " " << pf[1] << std::endl;
   double radius = 0.10;
-  // std::cout << "Normal is " << _grid_map_raw.at("normal_z", Eigen::Array2i(x_idx, y_idx)) <<
-  // std::endl;
   for (grid_map_utils::SpiralIterator iterator(_grid_map_raw, center, radius); !iterator.isPastEnd(); ++iterator)
   {
-    // auto traversability = _grid_map_raw.at("traversability", *iterator);
     auto traversability = _grid_map_plane.at("plane_classification", *iterator);
-    // auto uncertainty_r = height_map_filter.at("uncertainty_range", *iterator);
-    // if (leg == 0)
-    // std::cout << "traversability = " << traversability << std::endl;
     // If can step
     if (!std::isnan(traversability) && traversability > 0.8 /*&& !std::isnan(uncertainty_r) && uncertainty_r < 0.7*/)
     {
       x_idx_selected = (*iterator)(0);
-      // if (!_doorstep_case)
       // y_idx_selected = (*iterator)(1);
-      // if ((x_idx != x_idx_selected) && (y_idx != y_idx_selected))
-      //   std::cout << "Edit footstep from ( " << x_idx << " " << y_idx << ") to ( " << x_idx_selected << " " << y_idx_selected
-      //             << " )" << std::endl;
       return;
     }
   }
@@ -962,31 +885,6 @@ void CMPCLocomotion_Cv::_idxMapChecking(Vec3<float>& pf,
 
 void CMPCLocomotion_Cv::_findPF(Vec3<float>& v_des_world, size_t foot)
 {
-
-  // auto swing_state = (_gait->getSwingState())[foot];
-
-  // if (long_step_trigger && firstSwing[foot])
-  // {
-  //   long_step_run = true;
-  // }
-
-  // if (long_step_run)
-  // {
-  //   _longStep(_grid_map_filter, foot);
-  //   if (swing_state <= 0) // stance
-  //   {
-  //     long_step_run = false;
-  //     long_step_trigger = false;
-  //   }
-  //   return;
-  // }
-
-  // if (long_step_vel)
-  // {
-  //   _longStep(_grid_map_filter, foot);
-  //   return;
-  // }
-
   float side_sign[4] = { -1, 1, -1, 1 };
   float interleave_y[4] = { -0.08, 0.08, 0.02, -0.02 };
   float interleave_gain = -0.2;
@@ -1048,7 +946,6 @@ void CMPCLocomotion_Cv::_findPF(Vec3<float>& v_des_world, size_t foot)
 
 float CMPCLocomotion_Cv::_updateTrajHeight(size_t foot)
 {
-  static double max_trajectory_height = 0.17;
   double h = 0;
   double k = 0.05;
 
@@ -1060,7 +957,7 @@ float CMPCLocomotion_Cv::_updateTrajHeight(size_t foot)
   else
     h = obst_h + k;
   // Saturate h
-  h = std::clamp(h, -max_trajectory_height, max_trajectory_height);
+  h = std::clamp(h, -MAX_STEP_HEIGHT, MAX_STEP_HEIGHT);
   return h;
 }
 

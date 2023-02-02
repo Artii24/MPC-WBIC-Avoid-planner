@@ -53,13 +53,13 @@ ControlFSM<T>::ControlFSM(Quadruped<T>* quadruped,
   statesList.locomotion = new FSM_State_Locomotion<T>(&data);
   statesList.balanceStand = new FSM_State_BalanceStand<T>(&data);
   statesList.laydown = new FSM_State_LayDown<T>(&data);
-  statesList.vision = new FSM_State_Vision<T>(&data);
   statesList.testing = new FSM_State_Testing<T>(&data);
   statesList.recoveryStand = new FSM_State_RecoveryStand<T>(&data);
-  // statesList.backflip = new FSM_State_BackFlip<T>(&data);
   statesList.balance_vbl = new FSM_State_BalanceVBL<T>(&data);
-  // statesList.testingCV = new FSM_State_Testing_Cv<T>(&data);
+  statesList.testingCV = new FSM_State_Testing_Cv<T>(&data);
 
+  // statesList.backflip = new FSM_State_BackFlip<T>(&data);
+  // statesList.vision = new FSM_State_Vision<T>(&data);
   // statesList.jointPD = new FSM_State_JointPD<T>(&data);
   // statesList.impedanceControl = new FSM_State_ImpedanceControl<T>(&data);
   // statesList.frontJump = new FSM_State_FrontJump<T>(&data);
@@ -326,42 +326,63 @@ FSM_State<T>* ControlFSM<T>::getNextState(FSM_StateName stateName)
     case FSM_StateName::PASSIVE:
       return statesList.passive;
 
+    case FSM_StateName::STAND_UP:
+      if (statesList.standUp)
+        return statesList.standUp;
+      else
+        throw std::runtime_error("statesList.standUp not allocated");
+
+    case FSM_StateName::BALANCE_STAND:
+      if (statesList.balanceStand)
+        return statesList.balanceStand;
+      else
+        throw std::runtime_error("statesList.balanceStand not allocated");
+
+    case FSM_StateName::LAYDOWN:
+      if (statesList.laydown)
+        return statesList.laydown;
+      else
+        throw std::runtime_error("statesList.laydown not allocated");
+
+    case FSM_StateName::TESTING:
+      if (statesList.testing)
+        return statesList.testing;
+      else
+        throw std::runtime_error("statesList.testing not allocated");
+
+    case FSM_StateName::LOCOMOTION:
+      if (statesList.locomotion)
+        return statesList.locomotion;
+      else
+        throw std::runtime_error("statesList.locomotion not allocated");
+      return statesList.locomotion;
+
+    case FSM_StateName::RECOVERY_STAND:
+      if (statesList.recoveryStand)
+        return statesList.recoveryStand;
+      else
+        throw std::runtime_error("statesList.recoveryStand not allocated");
+
+    case FSM_StateName::TESTING_CV:
+      if (statesList.testingCV)
+        return statesList.testingCV;
+      else
+        throw std::runtime_error("statesList.testingCV not allocated");
+
       // case FSM_StateName::JOINT_PD:
       //   return statesList.jointPD;
 
       // case FSM_StateName::IMPEDANCE_CONTROL:
       //   return statesList.impedanceControl;
 
-    case FSM_StateName::STAND_UP:
-      return statesList.standUp;
+      // case FSM_StateName::BALANCE_VBL:
+      //   return statesList.balance_vbl;
 
-    case FSM_StateName::BALANCE_STAND:
-      return statesList.balanceStand;
+      // case FSM_StateName::VISION:
+      //   return statesList.vision;
 
-    case FSM_StateName::BALANCE_VBL:
-      return statesList.balance_vbl;
-
-    case FSM_StateName::LAYDOWN:
-      return statesList.laydown;
-
-    case FSM_StateName::TESTING:
-      return statesList.testing;
-
-    case FSM_StateName::LOCOMOTION:
-      return statesList.locomotion;
-
-    case FSM_StateName::RECOVERY_STAND:
-      return statesList.recoveryStand;
-
-    case FSM_StateName::VISION:
-      return statesList.vision;
-
-    case FSM_StateName::BACKFLIP:
-      return statesList.backflip;
-
-    case FSM_StateName::TESTING_CV:
-      return statesList.testingCV;
-
+      // case FSM_StateName::BACKFLIP:
+      //   return statesList.backflip;
       // case FSM_StateName::FRONTJUMP:
       //   return statesList.frontJump;
 

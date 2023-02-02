@@ -1,7 +1,7 @@
 #pragma once
 
 #include "FloatingBaseModel.h"
-#include "Gait_contact.h"
+#include "Gait.h"
 #include "Utilities/SpiralIterator.hpp"
 #include "cppTypes.h"
 #include "grid_map_ros/grid_map_ros.hpp"
@@ -32,8 +32,6 @@ public:
   void initialize();
 
   void run(ControlFSMData<float>& data);
-  void original(ControlFSMData<float>& data);
-  void myVersion(ControlFSMData<float>& data);
   void setGridMapRaw(const grid_map::GridMap& map) { _grid_map_raw = map; }
   void setGridMapFilter(const grid_map::GridMap& map) { _grid_map_filter = map; }
   void setGridMapPlane(const grid_map::GridMap& map) { _grid_map_plane = map; }
@@ -86,10 +84,10 @@ private:
   be2r_cmpc_unitree::ros_dynamic_paramsConfig* _parameters = nullptr;
 
   // Gait
-  Gait_contact* _gait;
+  Gait* _gait;
   int _gait_period;
   int _gait_period_long;
-  OffsetDurationGaitContact trotting, trot_long, standing, walking;
+  OffsetDurationGait trotting, trot_long, standing, walking;
   int current_gait;
   int _gait_des;
   bool _doorstep_case;

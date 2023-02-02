@@ -13,7 +13,7 @@
 #include "Utilities/SpiralIterator.hpp"
 #include "Utilities/Timer.h"
 #include "Utilities/Utilities_print.h"
-#include "controllers/CMPC/Gait_contact.h"
+#include "Gait.h"
 #include "convexMPC/Gait.h"
 #include "convexMPC_interface.h"
 #include "cppTypes.h"

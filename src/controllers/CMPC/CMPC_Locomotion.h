@@ -1,7 +1,7 @@
 #pragma once
 
 #include "FloatingBaseModel.h"
-#include "Gait_contact.h"
+#include "Gait.h"
 #include "cppTypes.h"
 #include <ControlFSMData.h>
 #include <FootSwingTrajectory.h>
@@ -168,7 +168,7 @@ private:
   Vec3<float> f_ff[4];
   Vec4<float> swingTimes;
   FootSwingTrajectory<float> footSwingTrajectories[4];
-  OffsetDurationGaitContact trotting, trot_contact, standing, walking, two_leg_balance, give_hand, trot_long;
+  OffsetDurationGait trotting, trot_contact, standing, walking, two_leg_balance, give_hand, trot_long;
   Mat3<float> Kp, Kd, Kp_stance, Kd_stance;
   bool firstRun = true;
   bool firstSwing[4];

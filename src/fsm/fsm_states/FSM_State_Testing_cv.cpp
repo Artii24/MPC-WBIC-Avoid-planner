@@ -618,7 +618,7 @@ void FSM_State_Testing_Cv<T>::LocomotionControlStep()
   // Contact state logic
   // estimateContact();
 
-  CMPC->myVersion(*this->_data);
+  CMPC->run(*this->_data);
 
   Vec3<T> pDes_backup[4];
   Vec3<T> vDes_backup[4];
