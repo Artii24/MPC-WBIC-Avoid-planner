@@ -669,9 +669,9 @@ void CMPCLocomotion::myNewVersion(ControlFSMData<float>& data)
   }
 
   // gait->updatePeriod(_dyn_params->gait_period);
-  gait->restoreDefaults();
+  // gait->restoreDefaults();
   gait->setIterations(iterationsBetweenMPC, iterationCounter);
-  gait->earlyContactHandle(seResult.contactSensor, iterationsBetweenMPC, iterationCounter);
+  // gait->earlyContactHandle(seResult.contactSensor, iterationsBetweenMPC, iterationCounter);
 
   recompute_timing(default_iterations_between_mpc);
 

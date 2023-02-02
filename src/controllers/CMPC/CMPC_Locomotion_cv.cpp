@@ -215,9 +215,9 @@ void CMPCLocomotion_Cv::myVersion(ControlFSMData<float>& data)
   }
 
   // _gait->updatePeriod(_dyn_params->gait_period);
-  _gait->restoreDefaults();
+  // _gait->restoreDefaults();
   _gait->setIterations(iterationsBetweenMPC, iterationCounter);
-  _gait->earlyContactHandle(seResult.contactSensor, iterationsBetweenMPC, iterationCounter);
+  // _gait->earlyContactHandle(seResult.contactSensor, iterationsBetweenMPC, iterationCounter);
 
   _recompute_timing(default_iterations_between_mpc);
 
@@ -1048,22 +1048,19 @@ void CMPCLocomotion_Cv::_findPF(Vec3<float>& v_des_world, size_t foot)
 
 float CMPCLocomotion_Cv::_updateTrajHeight(size_t foot)
 {
+  static double max_trajectory_height = 0.17;
   double h = 0;
   double k = 0.05;
-  double out;
-  // cout << "MAXELL = " << _max_cell << endl;
-  // double obst_h = _max_cell - footSwingTrajectories[foot].getInitialPosition()(2);
+
   double obst_h = std::abs(footSwingTrajectories[foot].getFinalPosition()(2));
-  // double obst_h =
-  //   std::abs(footSwingTrajectories[foot].getFinalPosition()(2) - footSwingTrajectories[foot].getInitialPosition()(2));
-  h = obst_h + k;
+  if (obst_h >= 0.12)
+  {
+    h = obst_h;
+  }
+  else
+    h = obst_h + k;
   // Saturate h
-  h = std::clamp(h, -_data->userParameters->Swing_traj_height, _data->userParameters->Swing_traj_height);
-  // if (obst_h < 0.07)
-  //   out = _data->userParameters->Swing_traj_height;
-  // else
-  //   out = h;
-  // out = std::clamp(out, -MAX_STEP_HEIGHT, MAX_STEP_HEIGHT);
+  h = std::clamp(h, -max_trajectory_height, max_trajectory_height);
   return h;
 }
 

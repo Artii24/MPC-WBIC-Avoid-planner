@@ -91,7 +91,7 @@ static_params:
   controller_dt     : 0.002
   cheater_mode      : false
   horizon           : 16
-  use_vision        : false
+  use_vision        : true
 
   # Estimators
   foot_height_sensor_noise      :  0.001
