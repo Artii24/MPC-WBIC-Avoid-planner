@@ -232,7 +232,7 @@ void Body_Manager::_odomPublish()
   _debug->body_info.quat_act.z = _stateEstimator->getResult().orientation.z();
   _debug->body_info.quat_act.w = _stateEstimator->getResult().orientation.w();
 
-  if (is_udp_connection)
+  if (is_udp_connection && _rosStaticParams.use_vision)
   {
     _debug->tfOdomPublishRS_t265(_debug->time_stamp_udp_get);
   }
