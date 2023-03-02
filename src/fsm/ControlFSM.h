@@ -22,8 +22,8 @@
 #include "FSM_State_StandUp.h"
 #include "FSM_State_Testing.h"
 #include "FSM_State_Testing_cv.h"
-#include "FSM_State_Vision.h"
 
+// #include "FSM_State_Vision.h"
 // #include "FSM_State_FrontJump.h"
 // #include "FSM_State_ImpedanceControl.h"
 // #include "FSM_State_JointPD.h"

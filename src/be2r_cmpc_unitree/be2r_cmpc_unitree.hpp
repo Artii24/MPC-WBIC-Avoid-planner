@@ -39,16 +39,11 @@
 #include "debug.hpp"
 
 // Unitree sdk
-// namespace USDK
-// {
 #include "unitree_legged_sdk/unitree_legged_sdk.h"
-// }
-// using namespace USDK;
 
 #define MAIN_LOOP_RATE 500
 
 // #define FSM 3
-// #define FSM_AUTO
 
 #define MOTOR_BREAK 0x00
 #define MOTOR_ON 0x0A
@@ -60,6 +55,12 @@ const float disabled_torque[3] = { 0.f, 0.f, 0.f };
 constexpr double PosStopF = (2.146E+9f);
 constexpr double VelStopF = (16000.0f);
 
+// Базовый класс. Содержит все основные методы, структуры,
+// экземпляры классов, необходимые для работы контроллера.
+// Имеет метод run, который вызывается с постоянной частотой
+// и выполняет основные шаги алгоритма походки
+// Класс включает в себя методы для работы с UnitreeSDK
+//  (_readRobotData()) и необходимые структуры данных
 class Body_Manager
 {
 public:

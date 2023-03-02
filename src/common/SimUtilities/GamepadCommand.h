@@ -4,6 +4,7 @@
  *  @brief The GamepadCommand type containing joystick information
  */
 
+// Подсказка для геймпада DualShock PS4
 /* * * BUTTONS * * * * * * * * * *
 0 - X
 1 - O
@@ -45,7 +46,8 @@ enum StairsMode
 };
 
 /*!
- * The state of the gamepad
+ * Класс для обработки команд от джойстика
+ * Принимает команды от ноды joy,из топика /joy
  */
 class GamepadCommand
 {
