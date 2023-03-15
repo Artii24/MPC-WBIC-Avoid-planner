@@ -4,8 +4,8 @@ dynamic_loader:
   FSM_State: 0
   use_wbc: true
   # use_wbc: false
-  # cmpc_gait: 9 # trot
-  cmpc_gait: 15 # trot long
+  cmpc_gait: 9
+ # cmpc_gait: 15 # trot long
   # cmpc_gait: 4 # stand
   test: 0
 
@@ -93,7 +93,7 @@ static_params:
   controller_dt     : 0.002
   cheater_mode      : false
   horizon           : 16
-  use_vision        : true
+  use_vision        : false
 
   # Estimators
   foot_height_sensor_noise      :  0.001
