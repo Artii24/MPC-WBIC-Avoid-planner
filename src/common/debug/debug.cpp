@@ -190,7 +190,6 @@ void Debug::tfOdomPublishRS_t265(ros::Time stamp)
   // odom_trans.transform.translation.z = body_info.pos_act.z;
 
   geometry_msgs::Quaternion odom_quat;
-  // TODO почему результаты естиматора приходится менять местами?
   odom_quat.x = body_info.quat_act.y;
   odom_quat.y = body_info.quat_act.z;
   odom_quat.z = body_info.quat_act.w;
@@ -212,16 +211,8 @@ void Debug::tfOdomPublish(ros::Time stamp)
   odom_trans.transform.translation.x = body_info.pos_act.x;
   odom_trans.transform.translation.y = body_info.pos_act.y;
   odom_trans.transform.translation.z = ground_truth_odom.pose.pose.position.z;
-  // odom_trans.transform.translation.z = body_info.pos_act.z;
-  // odom_trans.transform.translation.z += z_offset;
-
-  // odom_trans.transform.translation.x = ground_truth_odom.pose.pose.position.x;
-  // odom_trans.transform.translation.y = ground_truth_odom.pose.pose.position.y;
-  // odom_trans.transform.translation.z = ground_truth_odom.pose.pose.position.z;
-  // odom_trans.transform.translation.z = body_info.pos_act.z;
 
   geometry_msgs::Quaternion odom_quat;
-  // TODO почему результаты естиматора приходится менять местами?
   odom_quat.x = body_info.quat_act.y;
   odom_quat.y = body_info.quat_act.z;
   odom_quat.z = body_info.quat_act.w;

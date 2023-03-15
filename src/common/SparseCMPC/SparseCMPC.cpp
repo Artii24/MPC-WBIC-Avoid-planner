@@ -20,9 +20,7 @@
 // 10- y_vel
 // 11- z_vel
 
-SparseCMPC::SparseCMPC()
-{
-}
+SparseCMPC::SparseCMPC() {}
 
 void SparseCMPC::run()
 {
@@ -51,7 +49,7 @@ void SparseCMPC::run()
   buildCT();
   buildDT();
 
-  //printf("t1: %.3f\n", timer.getMs());
+  // printf("t1: %.3f\n", timer.getMs());
   timer.start();
 
   // build optimization problem
@@ -62,10 +60,10 @@ void SparseCMPC::run()
   addQuadraticStateCost();
   addLinearStateCost();
   addQuadraticControlCost();
-  //printf("t2: %.3f\n", timer.getMs());
+  // printf("t2: %.3f\n", timer.getMs());
 
   // Solve!
-  //runSolver();
+  // runSolver();
   runSolverOSQP();
 }
 
@@ -101,7 +99,7 @@ void SparseCMPC::buildCT()
   for (u32 i = 0; i < _trajectoryLength; i++)
   {
     // rotation from world into yaw frame
-    //Mat3<double> Ryaw = ori::coordinateRotation(ori::CoordinateAxis::Z, _stateTrajectory[i][2]); // todo check
+    // Mat3<double> Ryaw = ori::coordinateRotation(ori::CoordinateAxis::Z, _stateTrajectory[i][2]);
     Mat3<double> Ryaw = ori::coordinateRotation(ori::CoordinateAxis::Z, _rpy0[2]);
 
     // transform inertia to world and invert
@@ -267,8 +265,7 @@ void SparseCMPC::addDynamicsConstraints()
       {
         for (u32 col = 0; col < 3; col++)
         {
-          addConstraintTriple(-_bBlocks[bb_idx + contact](row, col),
-                              constraint_idx + row,
+          addConstraintTriple(-_bBlocks[bb_idx + contact](row, col), constraint_idx + row,
                               getControlIndex(bb_idx + contact) + col);
         }
       }
@@ -366,7 +363,7 @@ void SparseCMPC::addLinearStateCost()
   for (auto& v : _linearCost)
     v = 0;
   // -2 * w * x_des
-  //printf("z des traj: ");
+  // printf("z des traj: ");
   for (u32 i = 0; i < _trajectoryLength; i++)
   {
     u32 idx = getStateIndex(i);
@@ -376,13 +373,13 @@ void SparseCMPC::addLinearStateCost()
     }
     // printf("%.3f ", _stateTrajectory[i][5]);
   }
-  //printf("\n");
+  // printf("\n");
 }
 
 void SparseCMPC::runSolver()
 {
   u32 varCount = 12 * _trajectoryLength + 3 * _bBlockCount;
-  //printf("[SparseCMPC] Run %d, %d\n", varCount, _constraintCount);
+  // printf("[SparseCMPC] Run %d, %d\n", varCount, _constraintCount);
   assert(_constraintCount == _ub.size());
   assert(_constraintCount == _lb.size());
   assert(varCount == _linearCost.size());
@@ -412,7 +409,7 @@ void SparseCMPC::runSolver()
   _result = solver.getSolution().cast<float>();
 }
 
-//static const char* names[] = {"roll", "pitch", "yaw", "x", "y", "z", "roll-rate", "pitch-rate", "yaw-rate", "xv", "yv", "zv"};
+// static const char* names[] = {"roll", "pitch", "yaw", "x", "y", "z", "roll-rate", "pitch-rate", "yaw-rate", "xv", "yv", "zv"};
 
 Vec12<float> SparseCMPC::getResult()
 {
@@ -437,7 +434,8 @@ Vec12<float> SparseCMPC::getResult()
     auto& id = _bBlockIds[i];
     if (id.timestep == 0)
     {
-      //printf("result for foot %d %.3f %.3f %.3f\n", id.foot, _result[getControlIndex(i) + 0], _result[getControlIndex(i) + 1], _result[getControlIndex(i) + 2]);
+      // printf("result for foot %d %.3f %.3f %.3f\n", id.foot, _result[getControlIndex(i) + 0], _result[getControlIndex(i) + 1],
+      // _result[getControlIndex(i) + 2]);
       for (u32 j = 0; j < 3; j++)
       {
         result[id.foot * 3 + j] = _result[getControlIndex(i) + j];

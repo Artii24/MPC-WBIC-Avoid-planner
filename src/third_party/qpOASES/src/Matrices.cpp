@@ -961,7 +961,6 @@ returnValue SparseMatrix::getSparseSubmatrix(	int_t irowsLength, const int_t* co
 	int_t i, j, k, l;
 
 	// Compute the "inverse" of the irows->number array
-	// TODO: Ideally this should be a part of Indexlist
 	int_t* rowNumberInv = new int_t[nRows];
 	for (i=0; i<nRows; i++)
 		rowNumberInv[i] = -1;
@@ -2166,8 +2165,6 @@ returnValue SymSparseMat::bilinear( const Indexlist* const icols,
 			row = icols->number[icols->iSort[k]];
 			if (ir[idx] == row)
 			{
-				/* TODO: It is possible to formulate this as DSYR and DSYR2
-				 * operations. */
 				if (row == col) /* diagonal element */
 					for (i = 0; i < xN; i++)
 						for (j = i; j < xN; j++)

@@ -2,11 +2,11 @@
 #include "RobotState.h"
 #include "common_types.h"
 #include "convexMPC_interface.h"
+#include <JCQP/QpProblem.h>
+#include <Utilities/Timer.h>
 #include <cmath>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/unsupported/Eigen/MatrixFunctions>
-#include <JCQP/QpProblem.h>
-#include <Utilities/Timer.h>
 #include <qpOASES/include/qpOASES.hpp>
 #include <stdio.h>
 #include <sys/time.h>
@@ -51,20 +51,11 @@ u8 real_allocated = 0;
 char var_elim[2000];
 char con_elim[2000];
 
-mfp* get_q_soln()
-{
-  return q_soln;
-}
+mfp* get_q_soln() { return q_soln; }
 
-s8 near_zero(fpt a)
-{
-  return (a < 0.01 && a > -.01);
-}
+s8 near_zero(fpt a) { return (a < 0.01 && a > -.01); }
 
-s8 near_one(fpt a)
-{
-  return near_zero(a - 1);
-}
+s8 near_one(fpt a) { return near_zero(a - 1); }
 void matrix_to_real(qpOASES::real_t* dst, Matrix<fpt, Dynamic, Dynamic> src, s16 rows, s16 cols)
 {
   s32 a = 0;
@@ -168,8 +159,6 @@ void resize_qp_mats(s16 horizon)
   qH.setZero();
   eye_12h.setIdentity();
 
-  // TODO: use realloc instead of free/malloc on size changes
-
   if (real_allocated)
   {
 
@@ -229,7 +218,13 @@ inline Matrix<fpt, 3, 3> cross_mat(Matrix<fpt, 3, 3> I_inv, Matrix<fpt, 3, 1> r)
 }
 
 // continuous time state space matrices.
-void ct_ss_mats(Matrix<fpt, 3, 3> I_world, fpt m, Matrix<fpt, 3, 4> r_feet, Matrix<fpt, 3, 3> R_yaw, Matrix<fpt, 13, 13>& A, Matrix<fpt, 13, 12>& B, float x_drag)
+void ct_ss_mats(Matrix<fpt, 3, 3> I_world,
+                fpt m,
+                Matrix<fpt, 3, 4> r_feet,
+                Matrix<fpt, 3, 3> R_yaw,
+                Matrix<fpt, 13, 13>& A,
+                Matrix<fpt, 13, 12>& B,
+                float x_drag)
 {
   A.setZero();
   A(3, 9) = 1.f;

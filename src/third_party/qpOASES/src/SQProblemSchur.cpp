@@ -118,7 +118,7 @@ SQProblemSchur::SQProblemSchur( int_t _nV, int_t _nC, HessianType _hessianType, 
 		schurUpdate = new SchurUpdateType[nSmax];
 		Q_ = new real_t[nSmax*nSmax];
 		R_ = new real_t[nSmax*nSmax];
-		M_physicallength = 10*nSmax;  /* TODO: Decide good default. */
+		M_physicallength = 10*nSmax;  
 		M_vals = new real_t[M_physicallength];
 		M_ir = new sparse_int_t[M_physicallength];
 		M_jc = new sparse_int_t[nSmax+1];
@@ -2237,7 +2237,6 @@ real_t SQProblemSchur::calcDetSchur( int_t idxDel )
 		{
 			computeGivens( tempR[i+i*dim], tempR[(i+1)+i*dim], tempR[i+i*dim], tempR[(i+1)+i*dim], c, s );
 			nu = s/(1.0+c);
-			/// \todo I think we do not need to transform all columns of R, i+3 or so should be sufficient
 			for ( j=i+1; j<nS; j++ )
 				applyGivens( c, s, nu, tempR[i+j*dim], tempR[(i+1)+j*dim], tempR[i+j*dim], tempR[(i+1)+j*dim] );
 
@@ -2584,7 +2583,7 @@ returnValue SQProblemSchur::stepCalcBacksolveSchur( int_t nFR, int_t nFX, int_t 
 	for ( ii=0; ii<nS; ii++ )
 	{
 		int_t idx = schurUpdateIndex[ii];
-		switch ( schurUpdate[ii] ) // TODO: All the loops below could be done faster by binary search or so
+		switch ( schurUpdate[ii] ) 
 		{
 			case SUT_VarFixed:
 				q[ii] = 0.0;
@@ -2632,14 +2631,14 @@ returnValue SQProblemSchur::stepCalcBacksolveSchur( int_t nFR, int_t nFX, int_t 
 	if (retval != SUCCESSFUL_RETURN)
 	{
 		MyPrintf( "sparseSolver->solve (second time) failed.\n");
-		return THROWERROR(RET_MATRIX_FACTORISATION_FAILED); // TODO: Different return code
+		return THROWERROR(RET_MATRIX_FACTORISATION_FAILED); 
 	}
 
 	/* Transfer extra compoments of the Schur complement solution to the correct place. */
 	for ( ii=0; ii<nS; ii++ )
 	{
 		int_t idx = schurUpdateIndex[ii];
-		switch ( schurUpdate[ii] ) // TODO: All the loops below could be done faster by binary search or so
+		switch ( schurUpdate[ii] ) 
 		{
 			case SUT_VarFixed:
 				break;
@@ -2790,7 +2789,6 @@ returnValue SQProblemSchur::stepCalcDeltayFx(int_t nFR, int_t nFX, int_t nAC, in
 
 		if ( hessianType == HST_ZERO )
 		{
-		  // TODO: if ( usingRegularisation( ) == BT_TRUE )
 				for( i=0; i<nFX; ++i )
 					delta_yFX[i] += options.epsRegularisation*delta_xFX[i];
 		}
@@ -2934,7 +2932,7 @@ returnValue SQProblemSchur::determineStepDirection2(	const real_t* const delta_g
 			if (retval != SUCCESSFUL_RETURN)
 			{
 				MyPrintf( "sparseSolver->solve (first time) failed.\n");
-				return THROWERROR(RET_MATRIX_FACTORISATION_FAILED); // TODO: Different return code
+				return THROWERROR(RET_MATRIX_FACTORISATION_FAILED);
 			}
 
 			if ( nS > 0 )
@@ -2949,7 +2947,7 @@ returnValue SQProblemSchur::determineStepDirection2(	const real_t* const delta_g
 			if (retval != SUCCESSFUL_RETURN)
 				return retval;
 
-			if ( r < options.numRefinementSteps ) // TODO: use "<" to avoid computation in last round
+			if ( r < options.numRefinementSteps ) 
 			{
 				real_t rnrm;
 				retval = stepCalcResid(nFR, nFX, nAC, FR_idx, FX_idx, AC_idx, Delta_bC_isZero, delta_xFX, delta_xFR, delta_yAC, delta_g, delta_lbA, delta_ubA, rnrm);
@@ -3016,7 +3014,6 @@ returnValue SQProblemSchur::resetSchurComplement( BooleanType allowInertiaCorrec
 			H->getSparseSubmatrix( bounds.getFree(), bounds.getFree(), 1, 1, numNonzeros, 0, 0, 0, BT_TRUE);
 			break;
 	}
-	// TODO: For now, we regularize every time
 	if (options.epsRegularisation > 0.0)
 		numNonzeros += nFR;
 
@@ -3182,7 +3179,7 @@ returnValue SQProblemSchur::addToSchurComplement( int_t number, SchurUpdateType 
 	if (retval != SUCCESSFUL_RETURN)
 	{
 		MyPrintf( "sparseSolver->solve in SQProblemSchur::addToSchurComplement failed.\n");
-		return THROWERROR(RET_MATRIX_FACTORISATION_FAILED); // TODO: Different return code
+		return THROWERROR(RET_MATRIX_FACTORISATION_FAILED);
 	}
 
 	computeMTransTimes(1.0, sol, 0.0, new_Scol);
@@ -3547,7 +3544,6 @@ returnValue SQProblemSchur::repairSingularWorkingSet( )
 		return RET_KKT_MATRIX_SINGULAR;
 
 	/* We assume implicitly that pivots are sorted in ascending order */
-	/// \todo make sure that this is so.
 	/* Remove the one with the highest index first so not to mess up index lists */
 	int_t bndsAdded = 0;
 	for ( k=defect-1; k>-1; k-- )
@@ -3593,7 +3589,6 @@ returnValue SQProblemSchur::repairSingularWorkingSet( )
 			// violation of that constraint in the future. Here, I try to
 			// fix this by simply making this constraint no longer an
 			// equality.
-			// TODO: This is probably also necessary for bound constraints
 			if ( constraints.getType(number) == ST_EQUALITY )
 			{
 				if ( options.printLevel == PL_HIGH )

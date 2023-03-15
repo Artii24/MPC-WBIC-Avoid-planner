@@ -799,7 +799,6 @@ void CMPCLocomotion_Cv::_updateFoothold(Vec3<float>& pf, const Vec3<float>& body
     row_idx_body_com += ceil((body_pos_arg[1] - freeze_pose[1]) / _grid_map_raw.getResolution());
     col_idx_body_com = std::clamp(col_idx_body_com, 0, _grid_map_raw.getSize()(1) - 1);
     row_idx_body_com = std::clamp(row_idx_body_com, 0, _grid_map_raw.getSize()(0) - 1);
-    // TODO:Call enable update service when touch map edge
   }
 
   // Минус для преобразования координат

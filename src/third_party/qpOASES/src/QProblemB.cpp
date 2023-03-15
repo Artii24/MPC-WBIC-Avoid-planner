@@ -3597,7 +3597,7 @@ returnValue QProblemB::removeBound(	int_t number,
 		real_t r0;
 		switch ( hessianType )
 		{
-			case HST_ZERO: /* TODO: Code can/should? never get here!! */
+			case HST_ZERO:
 				if ( usingRegularisation( ) == BT_FALSE )
 					r0 = 0.0;
 				else

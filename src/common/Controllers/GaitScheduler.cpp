@@ -60,8 +60,7 @@ template struct GaitData<float>;
  * Constructor to automatically setup a basic gait
  */
 template<typename T>
-GaitScheduler<T>::GaitScheduler(be2r_cmpc_unitree::ros_dynamic_paramsConfig* userParameters,
-                                float _dt)
+GaitScheduler<T>::GaitScheduler(be2r_cmpc_unitree::ros_dynamic_paramsConfig* userParameters, float _dt)
 {
   initialize();
   _userParameters = userParameters;
@@ -140,8 +139,7 @@ void GaitScheduler<T>::step()
 
         // Calculate the remaining time in stance
         gaitData.timeStanceRemaining(foot) =
-          gaitData.periodTime(foot) *
-          (gaitData.switchingPhase(foot) - gaitData.phaseVariable(foot));
+          gaitData.periodTime(foot) * (gaitData.switchingPhase(foot) - gaitData.phaseVariable(foot));
 
         // Foot is in stance, no swing time remaining
         gaitData.timeSwingRemaining(foot) = 0.0;
@@ -167,15 +165,14 @@ void GaitScheduler<T>::step()
         gaitData.phaseStance(foot) = 1.0;
 
         // Swing subphase calculation
-        gaitData.phaseSwing(foot) = (gaitData.phaseVariable(foot) - gaitData.switchingPhase(foot)) /
-                                    (1.0 - gaitData.switchingPhase(foot));
+        gaitData.phaseSwing(foot) =
+          (gaitData.phaseVariable(foot) - gaitData.switchingPhase(foot)) / (1.0 - gaitData.switchingPhase(foot));
 
         // Foot is in swing, no stance time remaining
         gaitData.timeStanceRemaining(foot) = 0.0;
 
         // Calculate the remaining time in swing
-        gaitData.timeSwingRemaining(foot) =
-          gaitData.periodTime(foot) * (1 - gaitData.phaseVariable(foot));
+        gaitData.timeSwingRemaining(foot) = gaitData.periodTime(foot) * (1 - gaitData.phaseVariable(foot));
 
         // First contact signifies scheduled touchdown
         if (gaitData.contactStatePrev(foot) == 1)
@@ -414,7 +411,6 @@ void GaitScheduler<T>::createGait()
       break;
 
     case GaitType::TRAVERSE_GALLOP:
-      // TODO: find the right sequence, should be easy
       gaitData.gaitName = "TRAVERSE_GALLOP";
       gaitData.gaitEnabled << 1, 1, 1, 1;
       gaitData.periodTimeNominal = 0.5;
@@ -449,7 +445,6 @@ void GaitScheduler<T>::createGait()
 
     case GaitType::CUSTOM:
       gaitData.gaitName = "CUSTOM";
-      // TODO: get custom gait parameters from operator GUI
       break;
 
     case GaitType::TRANSITION_TO_STAND:
@@ -459,18 +454,13 @@ void GaitScheduler<T>::createGait()
       gaitData.periodTimeNominal = 3 * gaitData.periodTimeNominal;
       gaitData.initialPhase = 0.0;
       gaitData.switchingPhaseNominal =
-        (gaitData.periodTimeNominal +
-         oldGaitPeriodTimeNominal * (gaitData.switchingPhaseNominal - 1)) /
+        (gaitData.periodTimeNominal + oldGaitPeriodTimeNominal * (gaitData.switchingPhaseNominal - 1)) /
         gaitData.periodTimeNominal;
-      gaitData.phaseOffset << (gaitData.periodTimeNominal +
-                               oldGaitPeriodTimeNominal * (gaitData.phaseVariable(0) - 1)) /
+      gaitData.phaseOffset << (gaitData.periodTimeNominal + oldGaitPeriodTimeNominal * (gaitData.phaseVariable(0) - 1)) /
                                 gaitData.periodTimeNominal,
-        (gaitData.periodTimeNominal + oldGaitPeriodTimeNominal * (gaitData.phaseVariable(1) - 1)) /
-          gaitData.periodTimeNominal,
-        (gaitData.periodTimeNominal + oldGaitPeriodTimeNominal * (gaitData.phaseVariable(2) - 1)) /
-          gaitData.periodTimeNominal,
-        (gaitData.periodTimeNominal + oldGaitPeriodTimeNominal * (gaitData.phaseVariable(3) - 1)) /
-          gaitData.periodTimeNominal;
+        (gaitData.periodTimeNominal + oldGaitPeriodTimeNominal * (gaitData.phaseVariable(1) - 1)) / gaitData.periodTimeNominal,
+        (gaitData.periodTimeNominal + oldGaitPeriodTimeNominal * (gaitData.phaseVariable(2) - 1)) / gaitData.periodTimeNominal,
+        (gaitData.periodTimeNominal + oldGaitPeriodTimeNominal * (gaitData.phaseVariable(3) - 1)) / gaitData.periodTimeNominal;
       gaitData.phaseScale << 1.0, 1.0, 1.0, 1.0;
       gaitData.overrideable = 0;
       break;
@@ -568,23 +558,19 @@ void GaitScheduler<T>::printGaitInfo()
     std::cout << "[GAIT SCHEDULER] Printing Gait Info...\n";
     std::cout << "Gait Type: " << gaitData.gaitName << "\n";
     std::cout << "---------------------------------------------------------\n";
-    std::cout << "Enabled: " << gaitData.gaitEnabled(0) << " | " << gaitData.gaitEnabled(1) << " | "
-              << gaitData.gaitEnabled(2) << " | " << gaitData.gaitEnabled(3) << "\n";
-    std::cout << "Period Time: " << gaitData.periodTime(0) << "s | " << gaitData.periodTime(1)
-              << "s | " << gaitData.periodTime(2) << "s | " << gaitData.periodTime(3) << "s\n";
+    std::cout << "Enabled: " << gaitData.gaitEnabled(0) << " | " << gaitData.gaitEnabled(1) << " | " << gaitData.gaitEnabled(2)
+              << " | " << gaitData.gaitEnabled(3) << "\n";
+    std::cout << "Period Time: " << gaitData.periodTime(0) << "s | " << gaitData.periodTime(1) << "s | " << gaitData.periodTime(2)
+              << "s | " << gaitData.periodTime(3) << "s\n";
     std::cout << "---------------------------------------------------------\n";
-    std::cout << "Contact State: " << gaitData.contactStateScheduled(0) << " | "
-              << gaitData.contactStateScheduled(1) << " | " << gaitData.contactStateScheduled(2)
-              << " | " << gaitData.contactStateScheduled(3) << "\n";
-    std::cout << "Phase Variable: " << gaitData.phaseVariable(0) << " | "
-              << gaitData.phaseVariable(1) << " | " << gaitData.phaseVariable(2) << " | "
-              << gaitData.phaseVariable(3) << "\n";
-    std::cout << "Stance Time Remaining: " << gaitData.timeStanceRemaining(0) << "s | "
-              << gaitData.timeStanceRemaining(1) << "s | " << gaitData.timeStanceRemaining(2)
-              << "s | " << gaitData.timeStanceRemaining(3) << "s\n";
-    std::cout << "Swing Time Remaining: " << gaitData.timeSwingRemaining(0) << "s | "
-              << gaitData.timeSwingRemaining(1) << "s | " << gaitData.timeSwingRemaining(2)
-              << "s | " << gaitData.timeSwingRemaining(3) << "s\n";
+    std::cout << "Contact State: " << gaitData.contactStateScheduled(0) << " | " << gaitData.contactStateScheduled(1) << " | "
+              << gaitData.contactStateScheduled(2) << " | " << gaitData.contactStateScheduled(3) << "\n";
+    std::cout << "Phase Variable: " << gaitData.phaseVariable(0) << " | " << gaitData.phaseVariable(1) << " | "
+              << gaitData.phaseVariable(2) << " | " << gaitData.phaseVariable(3) << "\n";
+    std::cout << "Stance Time Remaining: " << gaitData.timeStanceRemaining(0) << "s | " << gaitData.timeStanceRemaining(1)
+              << "s | " << gaitData.timeStanceRemaining(2) << "s | " << gaitData.timeStanceRemaining(3) << "s\n";
+    std::cout << "Swing Time Remaining: " << gaitData.timeSwingRemaining(0) << "s | " << gaitData.timeSwingRemaining(1) << "s | "
+              << gaitData.timeSwingRemaining(2) << "s | " << gaitData.timeSwingRemaining(3) << "s\n";
     std::cout << std::endl;
 
     // Reset iteration counter

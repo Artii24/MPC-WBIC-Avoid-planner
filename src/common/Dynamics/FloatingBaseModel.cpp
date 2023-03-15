@@ -175,7 +175,8 @@ void FloatingBaseModel<T>::updateArticulatedBodies()
     _d[i] += _S[i].transpose() * _U[i];
 
     // articulated inertia recursion
-    Mat6<T> Ia = _Xup[i].transpose() * _IA[i] * _Xup[i] + _Xuprot[i].transpose() * _Irot[i].getMatrix() * _Xuprot[i] - _Utot[i] * _Utot[i].transpose() / _d[i];
+    Mat6<T> Ia = _Xup[i].transpose() * _IA[i] * _Xup[i] + _Xuprot[i].transpose() * _Irot[i].getMatrix() * _Xuprot[i] -
+                 _Utot[i] * _Utot[i].transpose() / _d[i];
     _IA[_parents[i]] += Ia;
   }
 
@@ -336,7 +337,8 @@ int FloatingBaseModel<T>::addGroundContactPoint(int bodyID, const Vec3<T>& locat
 {
   if ((size_t)bodyID >= _nDof)
   {
-    throw std::runtime_error("addGroundContactPoint got invalid bodyID: " + std::to_string(bodyID) + " nDofs: " + std::to_string(_nDof) + "\n");
+    throw std::runtime_error("addGroundContactPoint got invalid bodyID: " + std::to_string(bodyID) +
+                             " nDofs: " + std::to_string(_nDof) + "\n");
   }
 
   // std::cout << "pt-add: " << location.transpose() << "\n";
@@ -404,7 +406,14 @@ void FloatingBaseModel<T>::addGroundContactBoxPoints(int bodyId, const Vec3<T>& 
  * @return The body's ID (can be used as the parent)
  */
 template<typename T>
-int FloatingBaseModel<T>::addBody(const SpatialInertia<T>& inertia, const SpatialInertia<T>& rotorInertia, T gearRatio, int parent, JointType jointType, CoordinateAxis jointAxis, const Mat6<T>& Xtree, const Mat6<T>& Xrot)
+int FloatingBaseModel<T>::addBody(const SpatialInertia<T>& inertia,
+                                  const SpatialInertia<T>& rotorInertia,
+                                  T gearRatio,
+                                  int parent,
+                                  JointType jointType,
+                                  CoordinateAxis jointAxis,
+                                  const Mat6<T>& Xtree,
+                                  const Mat6<T>& Xrot)
 {
   if ((size_t)parent >= _nDof)
   {
@@ -440,9 +449,17 @@ int FloatingBaseModel<T>::addBody(const SpatialInertia<T>& inertia, const Spatia
  * @return The body's ID (can be used as the parent)
  */
 template<typename T>
-int FloatingBaseModel<T>::addBody(const MassProperties<T>& inertia, const MassProperties<T>& rotorInertia, T gearRatio, int parent, JointType jointType, CoordinateAxis jointAxis, const Mat6<T>& Xtree, const Mat6<T>& Xrot)
+int FloatingBaseModel<T>::addBody(const MassProperties<T>& inertia,
+                                  const MassProperties<T>& rotorInertia,
+                                  T gearRatio,
+                                  int parent,
+                                  JointType jointType,
+                                  CoordinateAxis jointAxis,
+                                  const Mat6<T>& Xtree,
+                                  const Mat6<T>& Xrot)
 {
-  return addBody(SpatialInertia<T>(inertia), SpatialInertia<T>(rotorInertia), gearRatio, parent, jointType, jointAxis, Xtree, Xrot);
+  return addBody(SpatialInertia<T>(inertia), SpatialInertia<T>(rotorInertia), gearRatio, parent, jointType, jointAxis, Xtree,
+                 Xrot);
 }
 
 template<typename T>
@@ -533,8 +550,6 @@ void FloatingBaseModel<T>::forwardKinematics()
   }
 
   // ground contact points
-  //  // TODO : we end up inverting the same Xa a few times (like for the 8
-  //  points on the body). this isn't super efficient.
   for (size_t j = 0; j < _nGroundContact; j++)
   {
     if (!_compute_contact_info[j])
@@ -957,7 +972,6 @@ void FloatingBaseModel<T>::runABA(const DVec<T>& tau, FBModelStateDerivative<T>&
   // adjust pA for external forces
   for (size_t i = 5; i < _nDof; i++)
   {
-    // TODO add if statement (avoid these calculations if the force is zero)
     Mat3<T> R = rotationFromSXform(_Xa[i]);
     Vec3<T> p = translationFromSXform(_Xa[i]);
     Mat6<T> iX = createSXform(R.transpose(), -R * p);
@@ -967,10 +981,12 @@ void FloatingBaseModel<T>::runABA(const DVec<T>& tau, FBModelStateDerivative<T>&
   // Pat's magic principle of least constraint
   for (size_t i = _nDof - 1; i >= 6; i--)
   {
-    _u[i] = tau[i - 6] - _S[i].transpose() * _pA[i] - _Srot[i].transpose() * _pArot[i] - _U[i].transpose() * _c[i] - _Urot[i].transpose() * _crot[i];
+    _u[i] = tau[i - 6] - _S[i].transpose() * _pA[i] - _Srot[i].transpose() * _pArot[i] - _U[i].transpose() * _c[i] -
+            _Urot[i].transpose() * _crot[i];
 
     // articulated inertia recursion
-    SVec<T> pa = _Xup[i].transpose() * (_pA[i] + _IA[i] * _c[i]) + _Xuprot[i].transpose() * (_pArot[i] + _Irot[i].getMatrix() * _crot[i]) + _Utot[i] * _u[i] / _d[i];
+    SVec<T> pa = _Xup[i].transpose() * (_pA[i] + _IA[i] * _c[i]) +
+                 _Xuprot[i].transpose() * (_pArot[i] + _Irot[i].getMatrix() * _crot[i]) + _Utot[i] * _u[i] / _d[i];
     _pA[_parents[i]] += pa;
   }
 
@@ -1005,7 +1021,9 @@ void FloatingBaseModel<T>::runABA(const DVec<T>& tau, FBModelStateDerivative<T>&
  * @return the 1x1 inverse contact inertia J H^{-1} J^T
  */
 template<typename T>
-T FloatingBaseModel<T>::applyTestForce(const int gc_index, const Vec3<T>& force_ics_at_contact, FBModelStateDerivative<T>& dstate_out)
+T FloatingBaseModel<T>::applyTestForce(const int gc_index,
+                                       const Vec3<T>& force_ics_at_contact,
+                                       FBModelStateDerivative<T>& dstate_out)
 {
   forwardKinematics();
   updateArticulatedBodies();
@@ -1044,7 +1062,6 @@ T FloatingBaseModel<T>::applyTestForce(const int gc_index, const Vec3<T>& force_
     i = _parents[i];
   }
 
-  // TODO: Only carry out the QR once within update Aritculated Bodies
   dstate_out.dBodyVelocity = _invIA5.solve(F);
   LambdaInv += F.dot(dstate_out.dBodyVelocity);
   dstate_out.qdd += _qdd_from_base_accel * dstate_out.dBodyVelocity;
@@ -1146,7 +1163,6 @@ DMat<T> FloatingBaseModel<T>::invContactInertia(const int gc_index, const D6Mat<
     i = _parents[i];
   }
 
-  // TODO: Only carry out the QR once within update Aritculated Bodies
   LambdaInv += D.transpose() * _invIA5.solve(D);
 
   return LambdaInv;

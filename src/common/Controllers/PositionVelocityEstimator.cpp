@@ -226,7 +226,6 @@ void LinearKFPositionVelocityEstimator<T>::run()
   // std::cout << yModel[0] << " " << yModel[1] << " " << yModel[2] << std::endl;
   Eigen::Matrix<T, 28, 28> S = _C * Pm * Ct + R;
 
-  // todo compute LU only once
   Eigen::Matrix<T, 28, 1> S_ey = S.lu().solve(ey);
   _xhat += Pm * Ct * S_ey;
 
@@ -268,7 +267,8 @@ template<typename T>
 void CheaterPositionVelocityEstimator<T>::run()
 {
   this->_stateEstimatorData.result->position = this->_stateEstimatorData.cheaterState->position.template cast<T>();
-  this->_stateEstimatorData.result->vWorld = this->_stateEstimatorData.result->rBody.transpose().template cast<T>() * this->_stateEstimatorData.cheaterState->vBody.template cast<T>();
+  this->_stateEstimatorData.result->vWorld = this->_stateEstimatorData.result->rBody.transpose().template cast<T>() *
+                                             this->_stateEstimatorData.cheaterState->vBody.template cast<T>();
   this->_stateEstimatorData.result->vBody = this->_stateEstimatorData.cheaterState->vBody.template cast<T>();
 }
 
