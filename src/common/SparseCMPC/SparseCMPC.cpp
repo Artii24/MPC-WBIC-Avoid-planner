@@ -63,7 +63,6 @@ void SparseCMPC::run()
   // printf("t2: %.3f\n", timer.getMs());
 
   // Solve!
-  // runSolver();
   runSolverOSQP();
 }
 
@@ -83,10 +82,6 @@ void SparseCMPC::buildX0()
  */
 void SparseCMPC::buildCT()
 {
-  //  for(u32 foot = 0; foot < 4; foot++) {
-  //    Vec3<double> pFoot = _pFeet.block(foot*3,0,3,1);
-  //    printf("FOOT %d: %6.3f, %6.3f %6.3f\n", foot, pFoot[0], pFoot[1], pFoot[2]);
-  //  }
   // one 12x12 A matrix per timestep
   _aMat.clear();
   _aMat.resize(_trajectoryLength);
@@ -99,7 +94,6 @@ void SparseCMPC::buildCT()
   for (u32 i = 0; i < _trajectoryLength; i++)
   {
     // rotation from world into yaw frame
-    // Mat3<double> Ryaw = ori::coordinateRotation(ori::CoordinateAxis::Z, _stateTrajectory[i][2]);
     Mat3<double> Ryaw = ori::coordinateRotation(ori::CoordinateAxis::Z, _rpy0[2]);
 
     // transform inertia to world and invert
@@ -221,9 +215,6 @@ void SparseCMPC::addX0Constraint()
   // compute right hand side A[0]*X0 + g*dt.
   Vec12<double> rhs = _aMat[0] * _x0 + _g * _dtTrajectory[0];
 
-  //  printf("x0: \n");
-  //  std::cout << _x0.transpose() << "\n";
-
   // add to problem.
   for (u32 i = 0; i < 12; i++)
   {
@@ -278,11 +269,6 @@ void SparseCMPC::addDynamicsConstraints()
       _ub.push_back(rhs[j]);
       _lb.push_back(rhs[j]);
     }
-
-    //    u32 idx2 = addConstraint(1);
-    //    addConstraintTriple(1., idx2, getStateIndex(i) + 5);
-    //    _lb.push_back(0);
-    //    _ub.push_back(0.3);
   }
 }
 
@@ -409,24 +395,8 @@ void SparseCMPC::runSolver()
   _result = solver.getSolution().cast<float>();
 }
 
-// static const char* names[] = {"roll", "pitch", "yaw", "x", "y", "z", "roll-rate", "pitch-rate", "yaw-rate", "xv", "yv", "zv"};
-
 Vec12<float> SparseCMPC::getResult()
 {
-
-  //  for(u32 i = 0; i < 12; i++) {
-  //    printf("%s: ", names[i]);
-  //    for(u32 j = 0; j < _trajectoryLength; j++) {
-  //      printf("%6.3f  ", _result[getStateIndex(j) + i]);
-  //    }
-  //    printf("\n");
-  //  }
-  //
-  //  printf("zf traj: ");
-  //  for(u32 i = 0; i < _bBlockCount; i++) {
-  //    printf("[%2d %3.3f]  ", _bBlockIds[i].timestep, _result[getControlIndex(i) + 2]);
-  //  }
-  //  printf("\n");
   Vec12<float> result;
   result.setZero();
   for (u32 i = 0; i < _bBlockIds.size(); i++)

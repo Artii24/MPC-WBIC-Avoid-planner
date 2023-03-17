@@ -83,7 +83,6 @@ template<typename T>
 void FSM_State_StandUp<T>::run()
 {
   standUpImpedance();
-  // standUpJointPD();
 }
 
 template<typename T>
@@ -154,7 +153,6 @@ void FSM_State_StandUp<T>::standUpJointPD()
     this->_data->legController->commands[i].kpJoint = Kp_joint;
     this->_data->legController->commands[i].kdJoint = Kd_joint;
 
-    // this->_data->legController->commands[i].qDes = _stand_joint_q[i] * progress + (1.0 - progress) * _init_joint_q[i];
     this->_data->legController->commands[i].qDes = q_des[i];
     this->_data->legController->commands[i].qdDes = Vec3<float>::Zero();
 

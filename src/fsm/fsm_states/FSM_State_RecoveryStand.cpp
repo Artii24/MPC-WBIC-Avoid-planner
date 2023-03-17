@@ -35,7 +35,6 @@ FSM_State_RecoveryStand<T>::FSM_State_RecoveryStand(ControlFSMData<T>* _controlF
   // Stand Up
   for (size_t i(0); i < 4; ++i)
   {
-    // stand_jpos[i] << 0.f, -.9425f, 1.885f;
     stand_jpos[i] << 0.f, -.8f, 1.6f;
   }
   // Rolling
@@ -70,7 +69,6 @@ void FSM_State_RecoveryStand<T>::onEnter()
 
   _flag = FoldLegs;
 
-  //
   if (!_UpsideDown())
   { // Proper orientation
     if ((0.2 < body_height) && (body_height < 0.45))
@@ -94,8 +92,6 @@ void FSM_State_RecoveryStand<T>::onEnter()
 template<typename T>
 bool FSM_State_RecoveryStand<T>::_UpsideDown()
 {
-  // pretty_print(this->_data->stateEstimator->getResult().rBody, std::cout, "Rot");
-  // if(this->_data->stateEstimator->getResult().aBody[2] < 0){
   if (this->_data->stateEstimator->getResult().rBody(2, 2) < 0)
   {
     return true;
@@ -150,17 +146,6 @@ void FSM_State_RecoveryStand<T>::_SetJPosInterPts(const size_t& curr_iter,
 
   // do control
   this->jointPDControl(leg, inter_pos, zero_vec3);
-
-  // if(curr_iter == 0){
-  // printf("flag:%d, curr iter: %lu, state iter: %llu, motion start iter: %d\n",
-  //_flag, curr_iter, _state_iter, _motion_start_iter);
-  // printf("inter pos: %f, %f, %f\n", inter_pos[0], inter_pos[1], inter_pos[2]);
-  //}
-  // if(curr_iter == max_iter){
-  // printf("flag:%d, curr iter: %lu, state iter: %llu, motion start iter: %d\n",
-  //_flag, curr_iter, _state_iter, _motion_start_iter);
-  // printf("inter pos: %f, %f, %f\n", inter_pos[0], inter_pos[1], inter_pos[2]);
-  //}
 }
 
 template<typename T>
@@ -217,10 +202,6 @@ void FSM_State_RecoveryStand<T>::_StandUp(const int& curr_iter)
       _SetJPosInterPts(curr_iter, standup_ramp_iter, leg, initial_jpos[leg], stand_jpos[leg]);
     }
   }
-  // feed forward mass of robot.
-  // for(int i = 0; i < 4; i++)
-  // this->_data->legController->commands[i].forceFeedForward = f_ff;
-  // Vec4<T> se_contactState(0.,0.,0.,0.);
   Vec4<T> se_contactState(0.5, 0.5, 0.5, 0.5);
   this->_data->stateEstimator->setContactPhase(se_contactState);
 }

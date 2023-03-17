@@ -25,11 +25,6 @@ FSM_State_LayDown<T>::FSM_State_LayDown(ControlFSMData<T>* _controlFSMData)
   // Post control safety checks
   this->checkPDesFoot = false;
   this->checkForceFeedForward = false;
-
-  // f = boost::bind(&callbackROSros, _1, _2);
-  // server.setCallback(f);
-
-  // ROS_INFO("START SERVER");
 }
 
 template<typename T>
@@ -75,10 +70,6 @@ void FSM_State_LayDown<T>::run()
   float p = 1200;
   float d = 15;
 
-  // for sim
-  // float p = 800;
-  // float d = 15;
-
   for (int i = 0; i < 4; i++)
   {
     this->_data->legController->commands[i].kpCartesian = Vec3<T>(p, p, p).asDiagonal();
@@ -90,9 +81,6 @@ void FSM_State_LayDown<T>::run()
 
     this->_data->legController->commands[i].forceFeedForward = leg_force;
   }
-
-  // cout << "z ini: " << _ini_foot_pos[0][2] << " z des: " <<
-  // this->_data->legController->commands[0].pDes[2] << endl;
 }
 
 /**
@@ -168,5 +156,4 @@ void FSM_State_LayDown<T>::onExit()
   // Nothing to clean up when exiting
 }
 
-// template class FSM_State_LayDown<double>;
 template class FSM_State_LayDown<float>;

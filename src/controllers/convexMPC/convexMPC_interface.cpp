@@ -55,14 +55,11 @@ void setup_problem(double dt, int horizon, double mu, double f_max)
   printf("[MPC] Prediction horizon length: %d\n Force limit: %.3f, friction %.3f\n dt: %.3f\n", horizon, f_max, mu, dt);
 #endif
 
-  // pthread_mutex_lock(&problem_cfg_mt);
-
   problem_configuration.horizon = horizon;
   problem_configuration.f_max = f_max;
   problem_configuration.mu = mu;
   problem_configuration.dt = dt;
 
-  // pthread_mutex_unlock(&problem_cfg_mt);
   resize_qp_mats(horizon);
 }
 
@@ -81,10 +78,6 @@ inline void mint_to_u8(u8* dst, mint* src, s32 n_items)
 
 int has_solved = 0;
 
-// void *call_solve(void* ptr)
-//{
-//  solve_mpc(&update, &problem_configuration);
-//}
 // safely copies problem data and starts the solver
 void update_problem_data(double* p, double* v, double* q, double* w, double* r, double yaw, double* weights,
                          double* state_trajectory, double alpha, int* gait)

@@ -186,7 +186,6 @@ void LinearKFPositionVelocityEstimator<T>::run()
 
     T trust = T(1);
     T phase = fmin(this->_stateEstimatorData.result->contactEstimate(i), T(1));
-    // T trust_window = T(0.25);
     T trust_window = T(0.2);
 
     if (phase < trust_window)
@@ -211,8 +210,6 @@ void LinearKFPositionVelocityEstimator<T>::run()
     _ps.segment(i1, 3) = -p_f;
     _vs.segment(i1, 3) = (1.0f - trust) * v0 + trust * (-dp_f);
     pzs(i) = (1.0f - trust) * (p0(2) + p_f(2));
-
-    // std::cout << pzs(0) << std::endl;
   }
 
   Eigen::Matrix<T, 28, 1> y;
@@ -223,7 +220,6 @@ void LinearKFPositionVelocityEstimator<T>::run()
   Eigen::Matrix<T, 18, 28> Ct = _C.transpose();
   Eigen::Matrix<T, 28, 1> yModel = _C * _xhat;
   Eigen::Matrix<T, 28, 1> ey = y - yModel;
-  // std::cout << yModel[0] << " " << yModel[1] << " " << yModel[2] << std::endl;
   Eigen::Matrix<T, 28, 28> S = _C * Pm * Ct + R;
 
   Eigen::Matrix<T, 28, 1> S_ey = S.lu().solve(ey);
@@ -253,9 +249,6 @@ void LinearKFPositionVelocityEstimator<T>::run()
 
   // my local body height based on least square plane
   this->_stateEstimatorData.result->position(2) = my_z;
-
-  // cout << "p: " << this->_stateEstimatorData.result->position << endl;
-  // cout << "v: " << this->_stateEstimatorData.result->vWorld << endl;
 }
 
 template class LinearKFPositionVelocityEstimator<float>;

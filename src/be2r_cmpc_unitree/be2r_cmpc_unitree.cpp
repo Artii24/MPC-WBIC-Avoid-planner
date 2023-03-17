@@ -3,12 +3,10 @@
 #include "ros/time.h"
 
 using namespace std;
-// using namespace USDK;
 
 Body_Manager::Body_Manager()
   : _zero_time(0),
     safe(UNITREE_LEGGED_SDK::LeggedType::A1)
-// udp(UNITREE_LEGGED_SDK::LOWLEVEL)
 {
   footContactState = Vec4<uint8_t>::Zero();
   f = boost::bind(&Body_Manager::_callbackDynamicROSParam, this, _1, _2);
@@ -196,19 +194,16 @@ void Body_Manager::_readRobotData()
   vectorNavData.quat[3] = _low_state.imu.quaternion[3]; // z
 
   // binary contact
-  // int16_t force_threshold = 70;
   int16_t force_threshold = 15;
 
   for (size_t i = 0; i < 4; i++)
   {
     if (_low_state.footForce[i] > force_threshold)
     {
-      // _debug->all_legs_info.leg[i].is_contact = 1;
       footContactState(i) = 1;
     }
     else
     {
-      // _debug->all_legs_info.leg[i].is_contact = 0;
       footContactState(i) = 0;
     }
   }
@@ -354,9 +349,6 @@ void Body_Manager::finalizeStep()
   _debug->ground_truth_odom = ground_truth;
 
   // put actual q and dq in debug class
-  // _debug->body_info.pos_z_global = _stateEstimator->getResult().heightBody;
-
-  // put actual q and dq in debug class
   for (size_t leg_num = 0; leg_num < 4; leg_num++)
   {
     _debug->all_legs_info.leg.at(leg_num).joint.at(0).q = spiData.q_abad[leg_num];
@@ -414,7 +406,6 @@ void Body_Manager::finalizeStep()
     }
   }
 
-  // _low_cmd.header.stamp = _zero_time + delta_t;
   _low_cmd.header.stamp = ros::Time::now();
 
   for (uint8_t leg = 0; leg < 4; leg++)
@@ -492,7 +483,6 @@ void Body_Manager::initializeStateEstimator()
   {
     _stateEstimator->addEstimator<VectorNavOrientationEstimator<float>>();
     _stateEstimator->addEstimator<LinearKFPositionVelocityEstimator<float>>();
-    // _stateEstimator->addEstimator<PositionEstimator<float>>);
   }
 }
 
@@ -562,10 +552,6 @@ void Body_Manager::_groundTruthCallback(nav_msgs::Odometry ground_truth_msg)
   _cheater_state.omegaBody[2] = vectorNavData.gyro[2];
 
   _cheater_state.orientation = vectorNavData.quat;
-  // _cheater_state.orientation[0] = ground_truth_msg.pose.pose.orientation.w;
-  // _cheater_state.orientation[1] = ground_truth_msg.pose.pose.orientation.x;
-  // _cheater_state.orientation[2] = ground_truth_msg.pose.pose.orientation.y;
-  // _cheater_state.orientation[3] = ground_truth_msg.pose.pose.orientation.z;
 }
 
 void Body_Manager::_lowStateCallback(unitree_legged_msgs::LowState msg)
@@ -602,22 +588,9 @@ void Body_Manager::_lowStateCallback(unitree_legged_msgs::LowState msg)
   for (size_t leg = 0; leg < 4; leg++)
   {
     footContactState(leg) = msg.footForce[leg];
-    //    if
-    //    ((_stateEstimator->getResult().contactEstimate[leg]
-    //    <= 0.001) &&
-    //      (footContactState(leg) == 1) )
-    //    {
-    ////      std::cout << "EARLY CONTACT" <<
-    /// std::endl;
-
-    //    }
   }
 
-  // cout << "bm: " << (int)footContactState(0) << endl;
   _stateEstimator->setContactSensorData(footContactState);
-
-  // Фильтрация данных
-  //  _filterInput();
 }
 
 void Body_Manager::_cmdVelCallback(geometry_msgs::Twist msg)
@@ -714,7 +687,6 @@ void Body_Manager::_callbackDynamicROSParam(be2r_cmpc_unitree::ros_dynamic_param
   _is_param_updated = true;
   _rosParameters = config;
   ROS_INFO_STREAM("New dynamic data!");
-  // cout << "[Dynamic Callback] Gait period: " << config.gait_period << endl;
 }
 
 void Body_Manager::_filterInput() {}

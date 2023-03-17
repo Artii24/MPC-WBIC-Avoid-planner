@@ -13,18 +13,8 @@
 
 #include "Gait.h"
 
-// оригинальные параметры MPC+WBC
-//  #define GAIT_PERIOD 14
-
 #define GAIT_PERIOD 14
-// #define GAIT_PERIOD 22
-// #define GAIT_PERIOD 34 //1000 Hz
-
-// #define GAIT_PERIOD_WALKING 26
 #define GAIT_PERIOD_WALKING 32
-
-// лучшие параметры для только MPC
-//  #define GAIT_PERIOD 18
 
 #define STEP_HEIGHT 0.06
 #define BODY_HEIGHT 0.24
@@ -57,7 +47,6 @@ CMPCLocomotion::CMPCLocomotion(float _dt, int _iterations_between_mpc, ControlFS
   dtMPC = dt * iterationsBetweenMPC;
   default_iterations_between_mpc = iterationsBetweenMPC;
   printf("[CMPC] dt: %.3f iterations: %d, dtMPC: %.3f\n", dt, iterationsBetweenMPC, dtMPC);
-  // setup_problem(dtMPC, horizonLength, 0.4, 150); // original
   setup_problem(dtMPC, horizonLength, 0.4, 300); // original
 
   rpy_comp[0] = 0;
@@ -159,7 +148,6 @@ void CMPCLocomotion::run(ControlFSMData<float>& data)
   myNewVersion(data);
 }
 
-
 void CMPCLocomotion::myNewVersion(ControlFSMData<float>& data)
 {
   bool omniMode = false;
@@ -244,10 +232,7 @@ void CMPCLocomotion::myNewVersion(ControlFSMData<float>& data)
     _is_stand_transition = false;
   }
 
-  // gait->updatePeriod(_dyn_params->gait_period);
-  // gait->restoreDefaults();
   gait->setIterations(iterationsBetweenMPC, iterationCounter);
-  // gait->earlyContactHandle(seResult.contactSensor, iterationsBetweenMPC, iterationCounter);
 
   recompute_timing(default_iterations_between_mpc);
 
@@ -274,8 +259,6 @@ void CMPCLocomotion::myNewVersion(ControlFSMData<float>& data)
   }
   else if (current_gait != 11)
   {
-    // estimated pitch of plane and pitch correction depends on Vdes
-    // _pitch_des = pitch_cmd + data.stateEstimator->getResult().rpy[1] + data.stateEstimator->getResult().est_pitch_plane + 0.1;
     _pitch_des = pitch_cmd + data.stateEstimator->getResult().rpy[1] + data.stateEstimator->getResult().est_pitch_plane;
 
     if (_x_vel_des > 0)
@@ -690,7 +673,6 @@ void CMPCLocomotion::solveDenseMPC(int* mpcTable, ControlFSMData<float>& data)
   float pitch = seResult.rpy[1];
   float yaw = seResult.rpy[2];
   float* weights = Q;
-  // float alpha = 4e-5; // make setting eventually
   float alpha = data.staticParams->alpha;
   float* p = seResult.position.data();
   float* v = seResult.vWorld.data();
@@ -748,7 +730,6 @@ void CMPCLocomotion::solveDenseMPC(int* mpcTable, ControlFSMData<float>& data)
   }
 }
 
-
 void CMPCLocomotion::initSparseMPC()
 {
   Mat3<double> baseInertia;
@@ -764,11 +745,9 @@ void CMPCLocomotion::initSparseMPC()
 
   Vec12<double> weights;
   weights << 0.25, 0.25, 10, 2, 2, 20, 0, 0, 0.3, 0.2, 0.2, 0.2;
-  // weights << 0,0,0,1,1,10,0,0,0,0.2,0.2,0;
 
   _sparseCMPC.setRobotParameters(baseInertia, mass, maxForce);
   _sparseCMPC.setFriction(1.0);
-  // _sparseCMPC.setFriction(0.4);
   _sparseCMPC.setWeights(weights, 4e-5);
   _sparseCMPC.setDtTrajectory(dtTraj);
 
@@ -803,8 +782,4 @@ void CMPCLocomotion::_updateModel(const StateEstimate<float>& state_est, const L
   _grav = _model.getGravityForce();
   _coriolis = _model.getCoriolisForce();
   _Ainv = _A.inverse();
-
-  // cout << "Mass Matrix: " << _A << endl;
-  // cout << "C+G: " << _grav+_coriolis << endl;
-  // cout << "Gravity: " << _grav << endl;
 }

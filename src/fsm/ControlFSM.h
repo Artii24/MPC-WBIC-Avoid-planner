@@ -23,11 +23,6 @@
 #include "FSM_State_Testing.h"
 #include "FSM_State_Testing_cv.h"
 
-// #include "FSM_State_Vision.h"
-// #include "FSM_State_FrontJump.h"
-// #include "FSM_State_ImpedanceControl.h"
-// #include "FSM_State_JointPD.h"
-
 /**
  * Enumerate all of the operating modes
  */
@@ -55,12 +50,6 @@ struct FSM_StatesList
   FSM_State_RecoveryStand<T>* recoveryStand = nullptr;
   FSM_State_BalanceVBL<T>* balance_vbl = nullptr;
   FSM_State_Testing_Cv<T>* testingCV = nullptr;
-
-  // FSM_State_Vision<T>* vision= nullptr;
-  // FSM_State_BackFlip<T>* backflip= nullptr;
-  // FSM_State_JointPD<T>* jointPD;
-  // FSM_State_ImpedanceControl<T>* impedanceControl;
-  // FSM_State_FrontJump<T>* frontJump;
 };
 
 /**
@@ -96,7 +85,6 @@ public:
   // This will be removed and put into the SafetyChecker class
   FSM_OperatingMode safetyPreCheck();
 
-  //
   FSM_OperatingMode safetyPostCheck();
 
   // Gets the next FSM_State from the list of created states when requested

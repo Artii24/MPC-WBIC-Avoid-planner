@@ -91,10 +91,6 @@ void Debug::updatePlot()
 
   odom.pose.pose.position = body_info.pos_act;
 
-  // odom.pose.pose.position.z = vio_z;
-  // odom.pose.pose.position.z += z_offset;
-  // odom.pose.pose.position.z = ground_truth_odom.pose.pose.position.z;
-
   geometry_msgs::Quaternion odom_quat;
   odom_quat.x = body_info.quat_act.y;
   odom_quat.y = body_info.quat_act.z;
@@ -171,6 +167,7 @@ void Debug::tfOdomPublishRS_t265(ros::Time stamp)
   camera2base.translation.y = 0.055;
   camera2base.translation.z = -0.13;
   camera2base.rotation = tf::createQuaternionMsgFromRollPitchYaw(0, 0, 3.14);
+
   try
   {
     odom2camera = _tf_buffer.lookupTransform("odom", "camera_t265_pose_frame", ros::Time(0));
@@ -179,15 +176,8 @@ void Debug::tfOdomPublishRS_t265(ros::Time stamp)
   {
     ROS_WARN("%s", ex.what());
   }
-  odom_trans.transform.translation.z = odom2camera.transform.translation.z + camera2base.translation.z;
-  // odom_trans.transform.translation.z = body_info.pos_act.z;
-  // odom_trans.transform.translation.z += z_offset;
-  // odom_trans.transform.translation.z = ground_truth_odom.pose.pose.position.z;
 
-  // odom_trans.transform.translation.x = ground_truth_odom.pose.pose.position.x;
-  // odom_trans.transform.translation.y = ground_truth_odom.pose.pose.position.y;
-  // odom_trans.transform.translation.z = ground_truth_odom.pose.pose.position.z;
-  // odom_trans.transform.translation.z = body_info.pos_act.z;
+  odom_trans.transform.translation.z = odom2camera.transform.translation.z + camera2base.translation.z;
 
   geometry_msgs::Quaternion odom_quat;
   odom_quat.x = body_info.quat_act.y;
@@ -226,14 +216,11 @@ void Debug::tfPublish()
 {
   geometry_msgs::TransformStamped odom_trans_world;
 
-  // odom_trans_world.header.stamp = time_stamp_udp_get;
   odom_trans_world.header.stamp = ros::Time::now();
   odom_trans_world.header.frame_id = "world";
   odom_trans_world.child_frame_id = "odom";
 
-  // z_offset = ground_truth_odom.pose.pose.position.z - body_info.pos_act.z;
   odom_trans_world.transform.translation.z = 0;
-  // odom_trans_world.transform.translation.z = z_offset;
   odom_trans_world.transform.rotation.w = 1.;
 
   world_odom_broadcaster.sendTransform(odom_trans_world);
@@ -307,10 +294,6 @@ void Debug::_drawLastStancePoints()
   geometry_msgs::Point p0, p1, p2, p3;
   marker.points.clear();
 
-  // p0 = last_p_stance[0]; // FL last stance point
-  // p1 = last_p_stance[1]; // FR last stance point
-  // p2 = last_p_stance[2]; // BR last stance point
-  // p3 = last_p_stance[3]; // BL last stance point
   p0 = last_p_local_stance[0]; // FL last stance local point
   p1 = last_p_local_stance[1]; // FR last stance local point
   p2 = last_p_local_stance[2]; // BR last stance local point
