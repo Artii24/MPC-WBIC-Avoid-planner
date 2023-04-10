@@ -92,15 +92,16 @@ void CMPCLocomotion::recompute_timing(int iterations_per_mpc)
 
 void CMPCLocomotion::_SetupCommand(ControlFSMData<float>& data)
 {
-  float x_vel_cmd, y_vel_cmd;
-  float filter_x(0.01);
-  float filter_y(0.01);
+  float x_vel_cmd, y_vel_cmd, yaw_vel_cmd;
+  float filter_x(0.005);
+  float filter_y(0.005);
+  float filter_yaw(0.005);
 
-  _yaw_turn_rate = data.gamepad_command->right_stick_analog[0];
+  yaw_vel_cmd = data.gamepad_command->right_stick_analog[0];
   x_vel_cmd = data.gamepad_command->left_stick_analog[1];
   y_vel_cmd = data.gamepad_command->left_stick_analog[0];
 
-  _yaw_turn_rate *= data.staticParams->max_turn_rate;
+  yaw_vel_cmd *= data.staticParams->max_turn_rate;
   x_vel_cmd *= data.staticParams->max_vel_x;
   y_vel_cmd *= data.staticParams->max_vel_y;
 
@@ -108,6 +109,7 @@ void CMPCLocomotion::_SetupCommand(ControlFSMData<float>& data)
 
   _x_vel_des = _x_vel_des * (1 - filter_x) + x_vel_cmd * filter_x;
   _y_vel_des = _y_vel_des * (1 - filter_y) + y_vel_cmd * filter_y;
+  _yaw_turn_rate = _yaw_turn_rate * (1 - filter_yaw) + yaw_vel_cmd*filter_yaw;
 
   if ((M_PI - abs(_yaw_des)) <= 0.1)
   {
