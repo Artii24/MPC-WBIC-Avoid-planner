@@ -533,8 +533,6 @@ void FloatingBaseModel<T>::forwardKinematics()
   }
 
   // ground contact points
-  //  // TODO : we end up inverting the same Xa a few times (like for the 8
-  //  points on the body). this isn't super efficient.
   for (size_t j = 0; j < _nGroundContact; j++)
   {
     if (!_compute_contact_info[j])
@@ -957,7 +955,6 @@ void FloatingBaseModel<T>::runABA(const DVec<T>& tau, FBModelStateDerivative<T>&
   // adjust pA for external forces
   for (size_t i = 5; i < _nDof; i++)
   {
-    // TODO add if statement (avoid these calculations if the force is zero)
     Mat3<T> R = rotationFromSXform(_Xa[i]);
     Vec3<T> p = translationFromSXform(_Xa[i]);
     Mat6<T> iX = createSXform(R.transpose(), -R * p);
@@ -1044,7 +1041,6 @@ T FloatingBaseModel<T>::applyTestForce(const int gc_index, const Vec3<T>& force_
     i = _parents[i];
   }
 
-  // TODO: Only carry out the QR once within update Aritculated Bodies
   dstate_out.dBodyVelocity = _invIA5.solve(F);
   LambdaInv += F.dot(dstate_out.dBodyVelocity);
   dstate_out.qdd += _qdd_from_base_accel * dstate_out.dBodyVelocity;
@@ -1146,7 +1142,6 @@ DMat<T> FloatingBaseModel<T>::invContactInertia(const int gc_index, const D6Mat<
     i = _parents[i];
   }
 
-  // TODO: Only carry out the QR once within update Aritculated Bodies
   LambdaInv += D.transpose() * _invIA5.solve(D);
 
   return LambdaInv;

@@ -22,11 +22,6 @@
 #include "FSM_State_StandUp.h"
 #include "FSM_State_Testing.h"
 #include "FSM_State_Testing_cv.h"
-#include "FSM_State_Vision.h"
-
-// #include "FSM_State_FrontJump.h"
-// #include "FSM_State_ImpedanceControl.h"
-// #include "FSM_State_JointPD.h"
 
 /**
  * Enumerate all of the operating modes
@@ -45,22 +40,16 @@ enum class FSM_OperatingMode
 template<typename T>
 struct FSM_StatesList
 {
-  FSM_State<T>* invalid;
-  FSM_State_Passive<T>* passive;
-  FSM_State_StandUp<T>* standUp;
-  FSM_State_Locomotion<T>* locomotion;
-  FSM_State_BalanceStand<T>* balanceStand;
-  FSM_State_LayDown<T>* laydown;
-  FSM_State_Vision<T>* vision;
-  FSM_State_Testing<T>* testing;
-  FSM_State_RecoveryStand<T>* recoveryStand;
-  FSM_State_BackFlip<T>* backflip;
-  FSM_State_BalanceVBL<T>* balance_vbl;
-  FSM_State_Testing_Cv<T>* testingCV;
-
-  // FSM_State_JointPD<T>* jointPD;
-  // FSM_State_ImpedanceControl<T>* impedanceControl;
-  // FSM_State_FrontJump<T>* frontJump;
+  FSM_State<T>* invalid = nullptr;
+  FSM_State_Passive<T>* passive = nullptr;
+  FSM_State_StandUp<T>* standUp = nullptr;
+  FSM_State_Locomotion<T>* locomotion = nullptr;
+  FSM_State_BalanceStand<T>* balanceStand = nullptr;
+  FSM_State_LayDown<T>* laydown = nullptr;
+  FSM_State_Testing<T>* testing = nullptr;
+  FSM_State_RecoveryStand<T>* recoveryStand = nullptr;
+  FSM_State_BalanceVBL<T>* balance_vbl = nullptr;
+  FSM_State_Testing_Cv<T>* testingCV = nullptr;
 };
 
 /**
@@ -96,7 +85,6 @@ public:
   // This will be removed and put into the SafetyChecker class
   FSM_OperatingMode safetyPreCheck();
 
-  //
   FSM_OperatingMode safetyPostCheck();
 
   // Gets the next FSM_State from the list of created states when requested

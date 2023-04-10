@@ -1501,7 +1501,7 @@ returnValue QProblem::solveQP(	const real_t* const g_new,
 		starttime = getCPUtime( );
 
 	/* AW: Remove bounds if they were active before but are now infinity */
-	status = QPS_PERFORMINGHOMOTOPY; // AW TODO: Not sure if this is too early, but otherwise removeBounds will complain
+	status = QPS_PERFORMINGHOMOTOPY;
 	returnvalue = updateActivitiesForHotstart( lb_new, ub_new, lbA_new, ubA_new );
 	if ( returnvalue != SUCCESSFUL_RETURN )
 	{
@@ -1923,7 +1923,6 @@ returnValue QProblem::updateActivitiesForHotstart( const real_t* const lb_new, c
 	}
 
 
-	// AW TODO: We could also implement something here for the constraints
 
 	return SUCCESSFUL_RETURN;
 }
@@ -6327,13 +6326,11 @@ returnValue QProblem::dropInfeasibles( int_t BC_number, SubjectToStatus BC_statu
 			SubjectToStatus status_ = bounds.getStatus (y_min_number);
 			removeBound (y_min_number, BT_TRUE, BT_FALSE, BT_FALSE);
 			bounds.setStatus (y_min_number, (status_ == ST_LOWER) ? ST_INFEASIBLE_LOWER : ST_INFEASIBLE_UPPER);
-			// TODO: fix duals y[]
 			/* fprintf (stdFile, "Dropping bounds %d for %s %d\n", y_min_number, BC_isBound?"bound":"constraint", BC_number); */
 		} else {
 			SubjectToStatus status_ = constraints.getStatus (y_min_number);
 			removeConstraint (y_min_number, BT_TRUE, BT_FALSE, BT_FALSE);
 			constraints.setStatus (y_min_number, (status_ == ST_LOWER) ? ST_INFEASIBLE_LOWER : ST_INFEASIBLE_UPPER);
-			// TODO: fix duals y[]
 			/* fprintf (stdFile, "Dropping constraint %d for %s %d\n", y_min_number, BC_isBound?"bound":"constraint", BC_number); */
 		}
 

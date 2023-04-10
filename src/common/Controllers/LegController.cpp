@@ -195,21 +195,6 @@ void LegController<T>::updateCommand(SpiCommand* spiCommand)
                              commands[leg].kdJoint * (commands[leg].qdDes - datas[leg].qd);
 
     spiCommand->flags[leg] = _legEnabled[leg];
-
-    // if (leg == 0)
-    // {
-    //   cout << "tau ff: " << commands[0].tauFeedForward << endl;
-    //   cout << "f ff: " << commands[0].forceFeedForward << endl;
-    //   cout << "f imp: " << footForce << endl;
-    //   cout << "Kp: " << commands[0].kpCartesian << endl;
-    //   cout << "Kd: " << commands[0].kdCartesian << endl;
-    //   cout << "Kp abad: " << spiCommand->kp_abad[0] << endl;
-    //   cout << "Kp hip: " << spiCommand->kp_hip[0] << endl;
-    //   cout << "Kp knee: " << spiCommand->kp_knee[0] << endl;
-    //   cout << "Kd abad: " << spiCommand->kd_abad[0] << endl;
-    //   cout << "Kd hip: " << spiCommand->kd_hip[0] << endl;
-    //   cout << "Kd knee: " << spiCommand->kd_knee[0] << endl;
-    // }
   }
 }
 

@@ -847,7 +847,6 @@ c_int validate_data(const OSQPData *data) {
     }
   }
 
-  // TODO: Complete with other checks
 
   return 0;
 }
@@ -858,7 +857,6 @@ c_int validate_linsys_solver(c_int linsys_solver) {
     return 1;
   }
 
-  // TODO: Add more solvers in case
 
   // Valid solver
   return 0;

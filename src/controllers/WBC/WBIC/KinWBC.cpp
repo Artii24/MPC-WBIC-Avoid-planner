@@ -5,14 +5,16 @@
 
 using namespace std;
 
-template <typename T>
+template<typename T>
 KinWBC<T>::KinWBC(size_t num_qdot)
-    : threshold_(0.001), num_qdot_(num_qdot), num_act_joint_(num_qdot - 6)
+  : threshold_(0.001),
+    num_qdot_(num_qdot),
+    num_act_joint_(num_qdot - 6)
 {
   I_mtx = DMat<T>::Identity(num_qdot_, num_qdot_);
 }
 
-template <typename T>
+template<typename T>
 bool KinWBC<T>::FindConfiguration(const DVec<T>& curr_config, const std::vector<Task<T>*>& task_list, const std::vector<ContactSpec<T>*>& contact_list, DVec<T>& jpos_cmd, DVec<T>& jvel_cmd)
 {
   // Contact Jacobian Setup
@@ -86,7 +88,7 @@ bool KinWBC<T>::FindConfiguration(const DVec<T>& curr_config, const std::vector<
   return true;
 }
 
-template <typename T>
+template<typename T>
 void KinWBC<T>::_BuildProjectionMatrix(const DMat<T>& J, DMat<T>& N)
 {
   DMat<T> J_pinv;
@@ -94,7 +96,7 @@ void KinWBC<T>::_BuildProjectionMatrix(const DMat<T>& J, DMat<T>& N)
   N = I_mtx - J_pinv * J;
 }
 
-template <typename T>
+template<typename T>
 void KinWBC<T>::_PseudoInverse(const DMat<T> J, DMat<T>& Jinv)
 {
   pseudoInverse(J, threshold_, Jinv);

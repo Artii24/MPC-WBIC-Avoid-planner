@@ -4,6 +4,7 @@
  *  @brief The GamepadCommand type containing joystick information
  */
 
+// Подсказка для геймпада DualShock PS4
 /* * * BUTTONS * * * * * * * * * *
 0 - X
 1 - O
@@ -34,9 +35,9 @@ up - axes[7] = 1
  * * * * * * * * * * * * * * */
 
 #include "cppTypes.h"
+#include <iostream>
 #include <ros/ros.h>
 #include <sensor_msgs/Joy.h>
-#include <iostream>
 
 enum StairsMode
 {
@@ -45,7 +46,8 @@ enum StairsMode
 };
 
 /*!
- * The state of the gamepad
+ * Класс для обработки команд от джойстика
+ * Принимает команды от ноды joy,из топика /joy
  */
 class GamepadCommand
 {
@@ -58,6 +60,7 @@ public:
   bool share;
   bool options;
   bool PS;
+  bool chord_op_l1;
 
   float L2, R2;
 

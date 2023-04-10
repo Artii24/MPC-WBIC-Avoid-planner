@@ -1,9 +1,9 @@
 #ifndef PTR_VECTOR_H_62B23520_7C8E_11DE_8A39_0800200C9A66
 #define PTR_VECTOR_H_62B23520_7C8E_11DE_8A39_0800200C9A66
 
-#if defined(_MSC_VER) ||                                            \
-    (defined(__GNUC__) && (__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || \
-     (__GNUC__ >= 4))  // GCC supports "pragma once" correctly since 3.4
+#if defined(_MSC_VER) || (defined(__GNUC__) && (__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || (__GNUC__ >= 4)) // GCC supports "pragma
+                                                                                                          // once" correctly
+                                                                                                          // since 3.4
 #pragma once
 #endif
 
@@ -14,12 +14,13 @@
 
 #include "dynacore_yaml-cpp/noncopyable.h"
 
-namespace dynacore_YAML {
+namespace dynacore_YAML
+{
 
-// TODO: This class is no longer needed
-template <typename T>
-class ptr_vector : private dynacore_YAML::noncopyable {
- public:
+template<typename T>
+class ptr_vector : private dynacore_YAML::noncopyable
+{
+public:
   ptr_vector() {}
 
   void clear() { m_data.clear(); }
@@ -35,9 +36,9 @@ class ptr_vector : private dynacore_YAML::noncopyable {
 
   const T& back() const { return *(m_data.back().get()); }
 
- private:
+private:
   std::vector<std::unique_ptr<T>> m_data;
 };
 }
 
-#endif  // PTR_VECTOR_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+#endif // PTR_VECTOR_H_62B23520_7C8E_11DE_8A39_0800200C9A66

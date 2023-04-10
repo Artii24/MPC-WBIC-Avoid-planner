@@ -1,7 +1,6 @@
 #include "be2r_cmpc_unitree.hpp"
 
 using namespace std;
-// using namespace USDK;
 
 int main(int argc, char* argv[])
 {

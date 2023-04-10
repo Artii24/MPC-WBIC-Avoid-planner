@@ -139,7 +139,6 @@ private:
   float _y_vel_des = 0.;
 
   // High speed running
-  // float _body_height = 0.34;
   float _body_height = 0.29;
 
   float _body_height_running = 0.29;

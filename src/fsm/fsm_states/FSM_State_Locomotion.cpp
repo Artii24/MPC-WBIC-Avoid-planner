@@ -9,12 +9,8 @@
 #include <Utilities/Timer.h>
 #include <controllers/WBC_Ctrl/LocomotionCtrl/LocomotionCtrl.hpp>
 
-//оригинальный параметр для MPC+WBC
+// оригинальный параметр для MPC+WBC
 #define ITERATIONS_BETWEEN_MPC 13
-// #define ITERATIONS_BETWEEN_MPC 26 //1000 Hz
-
-//лучший для только MPC
-// #define ITERATIONS_BETWEEN_MPC 10
 
 using namespace std;
 
@@ -31,7 +27,6 @@ FSM_State_Locomotion<T>::FSM_State_Locomotion(ControlFSMData<T>* _controlFSMData
   cMPCOld = new ConvexMPCLocomotion(_controlFSMData->staticParams->controller_dt, ITERATIONS_BETWEEN_MPC, _controlFSMData);
 
   this->turnOnAllSafetyChecks();
-  // this->turnOffAllSafetyChecks();
 
   // Turn off Foot pos command since it is set in WBC as operational task
   this->checkPDesFoot = false;
@@ -66,8 +61,6 @@ void FSM_State_Locomotion<T>::run()
   // Call the locomotion control logic for this iteration
   LocomotionControlStep();
 }
-
-// extern rc_control_settings rc_control;
 
 /**
  * Manages which states can be transitioned into either by the user
@@ -128,15 +121,13 @@ FSM_StateName FSM_State_Locomotion<T>::checkTransition()
         break;
 
       default:
-        std::cout << "[CONTROL FSM] Bad Request: Cannot transition from " << K_LOCOMOTION << " to "
-                  << this->_data->userParameters->FSM_State << std::endl;
+        std::cout << "[CONTROL FSM] Bad Request: Cannot transition from " << K_LOCOMOTION << " to " << this->_data->userParameters->FSM_State << std::endl;
     }
   }
   else
   {
     this->nextStateName = FSM_StateName::RECOVERY_STAND;
     this->transitionDuration = 0.;
-    // rc_control.mode = RC_mode::RECOVERY_STAND;
   }
 
   // Return the next state name to the FSM
@@ -191,7 +182,6 @@ TransitionData<T> FSM_State_Locomotion<T>::transition()
 
     case FSM_StateName::LAYDOWN:
       this->transitionData.done = true;
-      // this->_data->legController->is_low_level = true;
       break;
 
     default:
@@ -266,15 +256,7 @@ void FSM_State_Locomotion<T>::onExit()
 template<typename T>
 void FSM_State_Locomotion<T>::LocomotionControlStep()
 {
-  // StateEstimate<T> stateEstimate = this->_data->stateEstimator->getResult();
-
-  // Contact state logic
-  // estimateContact();
-
-  // cout << "[FSM_State_Locomotion] LocomotionControlStep start" << endl;
   cMPCOld->run<T>(*this->_data);
-
-  // cout << "[FSM_State_Locomotion] cMPCOld done" << endl;
 
   Vec3<T> pDes_backup[4];
   Vec3<T> vDes_backup[4];

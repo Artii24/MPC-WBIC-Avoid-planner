@@ -229,7 +229,7 @@ Ma27SparseSolver& Ma27SparseSolver::operator=( const SparseSolver& rhs )
 	if (!ma27_rhs)
 	{
 		fprintf(getGlobalMessageHandler()->getOutputFile(),"Error in Ma27SparseSolver& Ma27SparseSolver::operator=( const SparseSolver& rhs )\n");
-		throw; /* TODO: More elegant exit? */
+		throw; 
 	}
 	if ( this != ma27_rhs )
 	{
@@ -670,7 +670,7 @@ Ma57SparseSolver::Ma57SparseSolver( ) : SparseSolver()
 	/*icntl_ma57[4] = 4;		// Print everything (for debugging) */
 	icntl_ma57[15] = 1;			/* Place small pivots at the end of the factorization (default: 0) */
 
-	/* \todo good default values?
+	/* 
 	cntl_ma57[1] = 5.0e-16;		// Pivots smaller than this are treated as zero and are placed at the end of the factorization (default: 1e-20)
 	cntl_ma57[0] = 0.5;			// Set pivot tolerance: Higher values = more stable but slower/less sparse (default: 0.01, max 0.5) */
 }
@@ -703,7 +703,7 @@ Ma57SparseSolver& Ma57SparseSolver::operator=( const SparseSolver& rhs )
 	if (!ma57_rhs)
 	{
 		fprintf(getGlobalMessageHandler()->getOutputFile(),"Error in Ma57SparseSolver& Ma57SparseSolver::operator=( const SparseSolver& rhs )\n");
-		throw; /* TODO: More elegant exit? */
+		throw; 
 	}
 	if ( this != ma57_rhs )
 	{
