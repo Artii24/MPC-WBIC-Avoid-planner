@@ -1,7 +1,6 @@
 #include "be2r_cmpc_unitree.hpp"
 
 using namespace std;
-// using namespace USDK;
 
 int main(int argc, char* argv[])
 {
@@ -39,15 +38,14 @@ int main(int argc, char* argv[])
 
   ROS_INFO("Initialization Done!");
 
-  Timer t1;
+  Timer t2;
 
   while (ros::ok())
   {
-    // t1.start();
-
+    // t2.start();
     unitree.run();
 
-    // cout << t1.getMs() << endl;
+    // cout << t2.getMs() << endl;
 
     ros::spinOnce();
     rate.sleep();

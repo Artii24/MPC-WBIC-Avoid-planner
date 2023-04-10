@@ -15,16 +15,7 @@
 template<typename T>
 FSM_State_Passive<T>::FSM_State_Passive(ControlFSMData<T>* _controlFSMData) : FSM_State<T>(_controlFSMData, FSM_StateName::PASSIVE, "PASSIVE")
 {
-  // Do nothing
-  // Set the pre controls safety checks
-  // this->checkSafeOrientation = false;
-
-  // Post control safety checks
-  // this->checkPDesFoot = false;
-  // this->checkForceFeedForward = false;
-
   this->turnOffAllSafetyChecks();
-  // this->checkJointLimits = true;
 
   this->_control_fsm_data = _controlFSMData;
 }
@@ -77,9 +68,6 @@ TransitionData<T> FSM_State_Passive<T>::testTransition()
   {
     this->_control_fsm_data->legController->commands[i].kpJoint = Mat3<T>::Zero();
     this->_control_fsm_data->legController->commands[i].kdJoint = Mat3<T>::Zero();
-
-    // this->_control_fsm_data->legController->commands[i].kpCartesian = Mat3<T>::Zero();
-    // this->_control_fsm_data->legController->commands[i].kdCartesian = Mat3<T>::Zero();
 
     this->_control_fsm_data->legController->commands[i].qDes = Vec3<T>::Zero();
     this->_control_fsm_data->legController->commands[i].qdDes = Vec3<T>::Zero();
@@ -166,5 +154,4 @@ void FSM_State_Passive<T>::onExit()
   // Nothing to clean up when exiting
 }
 
-// template class FSM_State_Passive<double>;
 template class FSM_State_Passive<float>;

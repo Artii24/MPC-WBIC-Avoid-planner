@@ -22,6 +22,11 @@ using std::endl;
 
 #define PUB_IMU_AND_ODOM
 
+// Класс содержит структуры данных с информацией о состоянии робота
+// По указателю на экземпляр этого класса из разных участков контроллера
+// передается информация в структуры этого класса.
+// В классе реализованы методы для создания и публикации сообщений в
+// ROS, в том числе, для визуализации в rviz.
 class Debug
 {
 public:
@@ -29,6 +34,7 @@ public:
 
   void updatePlot();
   void updateVisualization();
+  void tfOdomPublishRS_t265(ros::Time stamp);
   void tfOdomPublish(ros::Time stamp);
   void tfPublish();
 
@@ -48,6 +54,7 @@ public:
 
   bool is_map_upd_stop;
   ros::Time time_stamp_udp_get;
+  double vio_z;
 
 private:
   void _init();

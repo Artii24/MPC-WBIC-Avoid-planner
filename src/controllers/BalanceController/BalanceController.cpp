@@ -123,10 +123,6 @@ BalanceController::BalanceController() : QProblemObj_qpOASES(NUM_VARIABLES_QP, N
     yOpt_qpOASES[i] = 0.0;
   }
 
-  //    FullStateData.p 1.000000 -0.131507
-  // FullStateData.p 2.000000 -0.000000
-  // FullStateData.p 3.000000 0.571957
-
   set_QPWeights();
   set_RobotLimits();
   set_worldData();
@@ -162,18 +158,6 @@ BalanceController::BalanceController() : QProblemObj_qpOASES(NUM_VARIABLES_QP, N
   qp_not_init = 1.0;
 }
 
-/*
-void BalanceController::set_base_support_flag(double sflag)
-{
-   double support_flag[] = {sflag};
-   command.command_number = 4;
-   command.data_size = sizeof(support_flag) / sizeof(double);
-   command.data.resize(command.data_size);
-   memcpy(command.data.data(), support_flag, sizeof(support_flag) );
-   lcm.publish("cheetah:sim_command", &command);
-}
-*/
-
 /* --------------- Primary Interface ------------------- */
 
 void BalanceController::updateProblemData(double* xfb_in, double* p_feet_in, double* p_des,
@@ -198,8 +182,6 @@ void BalanceController::updateProblemData(double* xfb_in, double* p_feet_in, dou
   R_yaw_act(1, 0) = sin(yaw_act);
   R_yaw_act(1, 1) = cos(yaw_act);
   R_yaw_act(2, 2) = 1;
-
-  // std::cout << "pfeet = " << p_feet_world << "\n";
 
   quaternion_to_rotationMatrix(R_b_world, quat_b_world);
 
@@ -269,35 +251,11 @@ void BalanceController::solveQP_nonThreaded(double* xOpt)
   QProblemObj_qpOASES.getBounds(guessedBounds);
   QProblemObj_qpOASES.getConstraints(guessedConstraints);
 
-  // std::cout << "cpu_time_initial = " << cpu_time_initial << "\n";
-  // std::cout << "qp exit flag = " << qp_exit_flag << "\n";
-  // std::cout << "nWSR_initial = " << nWSR_initial << "\n";
-  // std::cout << "max NWSR = " << RET_MAX_NWSR_REACHED << "\n"; // 64
-  // std::cout << "qp failed = " << RET_INIT_FAILED << "\n"; // 33
-
-  // std::cout <<  "Kp_COMx = " << Kp_COMx << "\n";
-  // std::cout <<  "Kp_COMy = " << Kp_COMy << "\n";
-  // std::cout <<  "Kp_COMz = " << Kp_COMz << "\n";
-  // std::cout <<  "Kd_COMx = " << Kd_COMx << "\n";
-  // std::cout <<  "Kd_COMy = " << Kd_COMy << "\n";
-  // std::cout <<  "Kd_COMz = " << Kd_COMz << "\n";
-
-  // std::cout <<  "Kp_Base_roll = " << Kp_Base_roll << "\n";
-  // std::cout <<  "Kp_Base_pitch = " << Kp_Base_pitch << "\n";
-  // std::cout <<  "Kp_Base_yaw = " << Kp_Base_yaw << "\n";
-  // std::cout <<  "Kd_Base_roll = " << Kd_Base_roll << "\n";
-  // std::cout <<  "Kd_Base_pitch = " << Kd_Base_pitch << "\n";
-  // std::cout <<  "Kd_Base_yaw = " << Kd_Base_yaw << "\n";
-
-  // std::cout << "S_control = " << S_control << "\n";
-
   qp_controller_data.exit_flag = qp_exit_flag;
   qp_controller_data.nWSR = nWSR_qpOASES;
   qp_controller_data.cpu_time_microseconds = cpu_time * 1.0e6;
 
   copy_real_t_to_Eigen(xOpt_eigen, xOpt_qpOASES, 12);
-  // copy_real_t_to_Eigen(yOptPrev, yOpt_qpOASES,
-  // NUM_VARIABLES_QP+NUM_CONSTRAINTS_QP);
 
   b_control_Opt = A_control * xOpt_eigen;
 

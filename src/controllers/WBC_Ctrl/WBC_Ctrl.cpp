@@ -6,7 +6,10 @@
 
 template<typename T>
 WBC_Ctrl<T>::WBC_Ctrl(FloatingBaseModel<T> model)
-  : _full_config(cheetah::num_act_joint + 7), _tau_ff(cheetah::num_act_joint), _des_jpos(cheetah::num_act_joint), _des_jvel(cheetah::num_act_joint)
+  : _full_config(cheetah::num_act_joint + 7),
+    _tau_ff(cheetah::num_act_joint),
+    _des_jpos(cheetah::num_act_joint),
+    _des_jvel(cheetah::num_act_joint)
 {
   _iter = 0;
   _full_config.setZero();
@@ -18,15 +21,11 @@ WBC_Ctrl<T>::WBC_Ctrl(FloatingBaseModel<T> model)
   _wbic_data = new WBIC_ExtraData<T>();
 
   _wbic_data->_W_floating = DVec<T>::Constant(6, 0.1);
-  //_wbic_data->_W_floating = DVec<T>::Constant(6, 50.);
-  //_wbic_data->_W_floating[5] = 0.1;
+
   _wbic_data->_W_rf = DVec<T>::Constant(12, 1.);
 
   _Kp_joint = DVec<T>::Constant(cheetah::num_leg_joint, 5.);
   _Kd_joint = DVec<T>::Constant(cheetah::num_leg_joint, 1.5);
-
-  //_Kp_joint_swing.resize(cheetah::num_leg_joint, 10.);
-  //_Kd_joint_swing.resize(cheetah::num_leg_joint, 1.5);
 
   _state.q = DVec<T>::Zero(cheetah::num_act_joint);
   _state.qd = DVec<T>::Zero(cheetah::num_act_joint);
@@ -81,35 +80,6 @@ void WBC_Ctrl<T>::run(void* input, ControlFSMData<T>& data)
   // WBC Computation
   _ComputeWBC();
 
-  // static Vec3<T> q(0, 0, 0);
-  // static Vec3<T> dq(0, 0, 0);
-  // static Vec3<T> ddq(0, 0, 0);
-  // static T dt = 0.002;
-
-  // Mat3<T> M = _A.block(6, 6, 3, 3);
-  // Vec3<T> C = _coriolis.block(6, 0, 3, 1);
-  // Vec3<T> G = _grav.block(6, 0, 3, 1);
-  // // Vec3<T> tau = data.legController->commands[0].tauFeedForward;
-  // Vec3<T> tau(0, 0, 0);
-  // tau << _tau_ff[0], _tau_ff[1], _tau_ff[2];
-
-  // ddq = M.inverse() * (tau - C - G);
-  // dq = dq + ddq * dt;
-
-  // // cout << "M: " << M << endl;
-  // // cout << "C: " << C << endl;
-  // // cout << "G: " << G << endl;
-  // // cout << "C+G: " << C + G << endl;
-  // // cout << "tau: " << tau << endl;
-  // // cout << "ddq: " << ddq << endl;
-
-  // data.debug->all_legs_info.leg[0].joint[0].dq_raw = dq[0];
-  // data.debug->all_legs_info.leg[0].joint[1].dq_raw = dq[1];
-  // data.debug->all_legs_info.leg[0].joint[2].dq_raw = dq[2];
-
-  // cout << "ddq: " << ddq << endl;
-  // cout << "dq: " << dq << endl;
-
   // Update Leg Command
   _UpdateLegCMD(data);
 }
@@ -132,21 +102,6 @@ void WBC_Ctrl<T>::_UpdateLegCMD(ControlFSMData<T>& data)
 
       cmd[leg].kdJoint(jidx, jidx) = _Kd_joint[jidx];
       cmd[leg].kpJoint(jidx, jidx) = _Kp_joint[jidx];
-
-      // // Contact
-      // if (contact[leg] > 0.)
-      // {
-      //   cmd[leg].zero();
-      //   cmd[leg].tauFeedForward[jidx] = _tau_ff[cheetah::num_leg_joint * leg + jidx];
-      //   cmd[leg].qDes[jidx] = _des_jpos[cheetah::num_leg_joint * leg + jidx];
-      //   cmd[leg].qdDes[jidx] = _des_jvel[cheetah::num_leg_joint * leg + jidx];
-
-      //   cmd[leg].kpJoint(jidx, jidx) = _Kp_joint[jidx];
-      //   cmd[leg].kdJoint(jidx, jidx) = _Kd_joint[jidx];
-      // }
-      // else
-      // {
-      // }
     }
   }
 
@@ -163,13 +118,10 @@ void WBC_Ctrl<T>::_UpdateLegCMD(ControlFSMData<T>& data)
       cmd[leg].tauFeedForward[2] = 1. / (knee_pos * knee_pos + 0.02);
     }
   }
-
-  // data.legController->is_low_level = true;
 }
 
 template<typename T>
-void WBC_Ctrl<T>::_UpdateModel(const StateEstimate<T>& state_est,
-                               const LegControllerData<T>* leg_data)
+void WBC_Ctrl<T>::_UpdateModel(const StateEstimate<T>& state_est, const LegControllerData<T>* leg_data)
 {
   _state.bodyOrientation = state_est.orientation;
   _state.bodyPosition = state_est.position;
@@ -199,10 +151,6 @@ void WBC_Ctrl<T>::_UpdateModel(const StateEstimate<T>& state_est,
   _grav = _model.getGravityForce();
   _coriolis = _model.getCoriolisForce();
   _Ainv = _A.inverse();
-
-  // cout << "Mass Matrix: " << _A << endl;
-  // cout << "C+G: " << _grav+_coriolis << endl;
-  // cout << "Gravity: " << _grav << endl;
 }
 
 template class WBC_Ctrl<float>;

@@ -3,12 +3,10 @@
 #include "ros/time.h"
 
 using namespace std;
-// using namespace USDK;
 
 Body_Manager::Body_Manager()
   : _zero_time(0),
     safe(UNITREE_LEGGED_SDK::LeggedType::A1)
-// udp(UNITREE_LEGGED_SDK::LOWLEVEL)
 {
   footContactState = Vec4<uint8_t>::Zero();
   f = boost::bind(&Body_Manager::_callbackDynamicROSParam, this, _1, _2);
@@ -102,29 +100,28 @@ void Body_Manager::init()
 
   _initSubscribers();
   _initPublishers();
-  ROS_INFO_STREAM("[Body_Manager] Loading parameters from ros server\n");
+  cout << "[Body_Manager] Loading parameters from ros server" << endl;
   _initParameters();
 
-  // TODO: check exist
   if (_is_param_updated)
   {
-    ROS_INFO_STREAM("[Body_Manager] Get params from dynamic reconfigure");
-    ROS_INFO_STREAM("[Body_Manager] Loaded robot parameters\n");
+    cout << "[Body_Manager] Get params from dynamic reconfigure" << endl;
+    cout << "[Body_Manager] Loaded robot parameters" << endl;
     _is_param_updated = false;
   }
   else
   {
-    ROS_WARN_STREAM("[Body_Manager] No dynamic config data");
+    cout << "[Body_Manager] No dynamic config data" << endl;
   }
 
   if (_robot_type == "a1")
   {
-    ROS_INFO("[Body_Manager] Build A1 model");
+    cout << "[Body_Manager] Build A1 model" << endl;
     _quadruped = buildMiniCheetah<float>(RobotType::A1);
   }
   else if (_robot_type == "go1")
   {
-    ROS_INFO("[Body_Manager] Build GO1 model");
+    cout << "[Body_Manager] Build GO1 model" << endl;
     _quadruped = buildMiniCheetah<float>(RobotType::GO1);
   }
 
@@ -161,10 +158,7 @@ void Body_Manager::init()
 
 void Body_Manager::_readRobotData()
 {
-  // TODO check if we can send only zero struct and recieve falid data and dont crash robot
-  // controller
   udp->SetSend(_udp_low_cmd);
-  // TODO check if TRULY NEW data recieved
   udp->GetRecv(_udp_low_state);
 
   _low_state = _udpStateToRos(_udp_low_state);
@@ -200,38 +194,19 @@ void Body_Manager::_readRobotData()
   vectorNavData.quat[3] = _low_state.imu.quaternion[3]; // z
 
   // binary contact
-  // int16_t force_threshold = 70;
   int16_t force_threshold = 15;
 
   for (size_t i = 0; i < 4; i++)
   {
     if (_low_state.footForce[i] > force_threshold)
     {
-      // _debug->all_legs_info.leg[i].is_contact = 1;
       footContactState(i) = 1;
     }
     else
     {
-      // _debug->all_legs_info.leg[i].is_contact = 0;
       footContactState(i) = 0;
     }
   }
-
-  // // Датчики контакта на лапах
-  // for (size_t leg = 0; leg < 4; leg++)
-  // {
-  //   footContactState(leg) = msg.footForce[leg];
-
-  //   //    if
-  //   //    ((_stateEstimator->getResult().contactEstimate[leg]
-  //   //    <= 0.001) &&
-  //   //      (footContactState(leg) == 1) )
-  //   //    {
-  //   ////      std::cout << "EARLY CONTACT" <<
-  //   /// std::endl;
-
-  //   //    }
-  // }
 
   _stateEstimator->setContactSensorData(footContactState);
 
@@ -250,9 +225,9 @@ void Body_Manager::_odomPublish()
   _debug->body_info.quat_act.z = _stateEstimator->getResult().orientation.z();
   _debug->body_info.quat_act.w = _stateEstimator->getResult().orientation.w();
 
-  if (is_udp_connection)
+  if (is_udp_connection && _rosStaticParams.use_vision)
   {
-    _debug->tfOdomPublish(_debug->time_stamp_udp_get);
+    _debug->tfOdomPublishRS_t265(_debug->time_stamp_udp_get);
   }
   else
   {
@@ -305,8 +280,8 @@ void Body_Manager::run()
   finalizeStep();
 
 #ifdef FSM_AUTO
-  //оставляю эту часть для автоматического
-  //перехода между режимами, если понадобится
+  // оставляю эту часть для автоматического
+  // перехода между режимами, если понадобится
   if (count_ini > 100 && count_ini < 1500)
   {
     ROS_INFO_STREAM_ONCE("Stand up " << count_ini);
@@ -331,11 +306,9 @@ void Body_Manager::setupStep()
   _legController->updateData(&spiData);
 
   // Setup the leg controller for a new iteration
-  _legController->zeroCommand(); //нельзя убирать
+  _legController->zeroCommand(); // нельзя убирать
   _legController->setEnabled(true);
   _legController->is_low_level = _is_low_level;
-
-  // todo safety checks, sanity checks, etc...
 }
 
 void Body_Manager::finalizeStep()
@@ -374,9 +347,6 @@ void Body_Manager::finalizeStep()
   _debug->imu.linear_acceleration.z = _low_state.imu.accelerometer[2];
 
   _debug->ground_truth_odom = ground_truth;
-
-  // put actual q and dq in debug class
-  // _debug->body_info.pos_z_global = _stateEstimator->getResult().heightBody;
 
   // put actual q and dq in debug class
   for (size_t leg_num = 0; leg_num < 4; leg_num++)
@@ -436,7 +406,6 @@ void Body_Manager::finalizeStep()
     }
   }
 
-  // _low_cmd.header.stamp = _zero_time + delta_t;
   _low_cmd.header.stamp = ros::Time::now();
 
   for (uint8_t leg = 0; leg < 4; leg++)
@@ -485,7 +454,7 @@ void Body_Manager::finalizeStep()
     // position limit safety check
     safe.PositionLimit(_udp_low_cmd);
     // power protection safety check
-    safe.PowerProtect(_udp_low_cmd, _udp_low_state, 5);
+    safe.PowerProtect(_udp_low_cmd, _udp_low_state, _power_limit);
 
     // put udp struct to udp send transfer process
     udp->SetSend(_udp_low_cmd);
@@ -514,7 +483,6 @@ void Body_Manager::initializeStateEstimator()
   {
     _stateEstimator->addEstimator<VectorNavOrientationEstimator<float>>();
     _stateEstimator->addEstimator<LinearKFPositionVelocityEstimator<float>>();
-    // _stateEstimator->addEstimator<PositionEstimator<float>>);
   }
 }
 
@@ -584,10 +552,6 @@ void Body_Manager::_groundTruthCallback(nav_msgs::Odometry ground_truth_msg)
   _cheater_state.omegaBody[2] = vectorNavData.gyro[2];
 
   _cheater_state.orientation = vectorNavData.quat;
-  // _cheater_state.orientation[0] = ground_truth_msg.pose.pose.orientation.w;
-  // _cheater_state.orientation[1] = ground_truth_msg.pose.pose.orientation.x;
-  // _cheater_state.orientation[2] = ground_truth_msg.pose.pose.orientation.y;
-  // _cheater_state.orientation[3] = ground_truth_msg.pose.pose.orientation.z;
 }
 
 void Body_Manager::_lowStateCallback(unitree_legged_msgs::LowState msg)
@@ -624,22 +588,9 @@ void Body_Manager::_lowStateCallback(unitree_legged_msgs::LowState msg)
   for (size_t leg = 0; leg < 4; leg++)
   {
     footContactState(leg) = msg.footForce[leg];
-    //    if
-    //    ((_stateEstimator->getResult().contactEstimate[leg]
-    //    <= 0.001) &&
-    //      (footContactState(leg) == 1) )
-    //    {
-    ////      std::cout << "EARLY CONTACT" <<
-    /// std::endl;
-
-    //    }
   }
 
-  // cout << "bm: " << (int)footContactState(0) << endl;
   _stateEstimator->setContactSensorData(footContactState);
-
-  // Фильтрация данных
-  //  _filterInput();
 }
 
 void Body_Manager::_cmdVelCallback(geometry_msgs::Twist msg)

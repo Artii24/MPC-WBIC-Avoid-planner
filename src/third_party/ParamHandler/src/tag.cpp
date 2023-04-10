@@ -1,13 +1,17 @@
 #include <cassert>
 #include <stdexcept>
 
-#include "directives.h"  // IWYU pragma: keep
+#include "directives.h" // IWYU pragma: keep
 #include "tag.h"
 #include "token.h"
 
-namespace dynacore_YAML {
-Tag::Tag(const Token& token) : type(static_cast<TYPE>(token.data)) {
-  switch (type) {
+namespace dynacore_YAML
+{
+Tag::Tag(const Token& token)
+  : type(static_cast<TYPE>(token.data))
+{
+  switch (type)
+  {
     case VERBATIM:
       value = token.value;
       break;
@@ -28,8 +32,10 @@ Tag::Tag(const Token& token) : type(static_cast<TYPE>(token.data)) {
   }
 }
 
-const std::string Tag::Translate(const Directives& directives) {
-  switch (type) {
+const std::string Tag::Translate(const Directives& directives)
+{
+  switch (type)
+  {
     case VERBATIM:
       return value;
     case PRIMARY_HANDLE:
@@ -39,7 +45,6 @@ const std::string Tag::Translate(const Directives& directives) {
     case NAMED_HANDLE:
       return directives.TranslateTagHandle("!" + handle + "!") + value;
     case NON_SPECIFIC:
-      // TODO:
       return "!";
     default:
       assert(false);

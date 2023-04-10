@@ -78,10 +78,6 @@ public:
     _pFeet = feet.template cast<double>();
   }
 
-  //  Eigen::Matrix<float, Eigen::Dynamic, 1>& getResult() {
-  //    return _result;
-  //  }
-
   Vec12<float> getResult();
 
 private:

@@ -27,14 +27,7 @@ void execBash(string msg)
  * @param controlParameters passes in the control parameters from the GUI
  */
 template<typename T>
-ControlFSM<T>::ControlFSM(Quadruped<T>* quadruped,
-                          StateEstimatorContainer<T>* stateEstimator,
-                          LegController<T>* legController,
-                          GaitScheduler<T>* gaitScheduler,
-                          GamepadCommand* gamepad_command,
-                          StaticParams* staticParams,
-                          be2r_cmpc_unitree::ros_dynamic_paramsConfig* userParameters,
-                          Debug* debug)
+ControlFSM<T>::ControlFSM(Quadruped<T>* quadruped, StateEstimatorContainer<T>* stateEstimator, LegController<T>* legController, GaitScheduler<T>* gaitScheduler, GamepadCommand* gamepad_command, StaticParams* staticParams, be2r_cmpc_unitree::ros_dynamic_paramsConfig* userParameters, Debug* debug)
 {
   // Add the pointers to the ControlFSMData struct
   data.quadruped = quadruped;
@@ -53,16 +46,10 @@ ControlFSM<T>::ControlFSM(Quadruped<T>* quadruped,
   statesList.locomotion = new FSM_State_Locomotion<T>(&data);
   statesList.balanceStand = new FSM_State_BalanceStand<T>(&data);
   statesList.laydown = new FSM_State_LayDown<T>(&data);
-  statesList.vision = new FSM_State_Vision<T>(&data);
   statesList.testing = new FSM_State_Testing<T>(&data);
   statesList.recoveryStand = new FSM_State_RecoveryStand<T>(&data);
-  statesList.backflip = new FSM_State_BackFlip<T>(&data);
   statesList.balance_vbl = new FSM_State_BalanceVBL<T>(&data);
   statesList.testingCV = new FSM_State_Testing_Cv<T>(&data);
-
-  // statesList.jointPD = new FSM_State_JointPD<T>(&data);
-  // statesList.impedanceControl = new FSM_State_ImpedanceControl<T>(&data);
-  // statesList.frontJump = new FSM_State_FrontJump<T>(&data);
 
   safetyChecker = new SafetyChecker<T>(&data);
 
@@ -121,12 +108,9 @@ void ControlFSM<T>::runFSM()
         nextStateName = currentState->stateName;
       }
 
-      // ROS_INFO_ONCE("start");
-
       if (iter > (iter_start + iter_duration))
       {
         operatingMode = FSM_OperatingMode::ESTOP;
-        // ROS_INFO("STOP!");
       }
 
       data.legController->edampCommand(3.0);
@@ -157,13 +141,21 @@ void ControlFSM<T>::runFSM()
         t1 = new std::thread(execBash, "12");
         ROS_WARN("TESTING");
       }
-      
+
       if (data.gamepad_command->right && (FSM_StateName::BALANCE_STAND != currentState->stateName))
       {
         data.userParameters->FSM_State = 3;
 
         t1 = new std::thread(execBash, "3");
         ROS_WARN("BALANCE STAND");
+      }
+
+      if (data.gamepad_command->chord_op_l1 && (FSM_StateName::TESTING_CV != currentState->stateName))
+      {
+        data.userParameters->FSM_State = 14;
+
+        t1 = new std::thread(execBash, "14");
+        ROS_WARN("TRANSITION TO TESTING CV");
       }
 
       // Check the current state for any transition
@@ -261,7 +253,6 @@ FSM_OperatingMode ControlFSM<T>::safetyPreCheck()
   {
     if (!safetyChecker->checkJointLimits())
     {
-      // operatingMode = FSM_OperatingMode::ESTOP;
       operatingMode = FSM_OperatingMode::EDAMP;
       ROS_ERROR_STREAM("Broken: Joint limits check FAIL!");
     }
@@ -318,44 +309,48 @@ FSM_State<T>* ControlFSM<T>::getNextState(FSM_StateName stateName)
     case FSM_StateName::PASSIVE:
       return statesList.passive;
 
-      // case FSM_StateName::JOINT_PD:
-      //   return statesList.jointPD;
-
-      // case FSM_StateName::IMPEDANCE_CONTROL:
-      //   return statesList.impedanceControl;
-
     case FSM_StateName::STAND_UP:
-      return statesList.standUp;
+      if (statesList.standUp)
+        return statesList.standUp;
+      else
+        throw std::runtime_error("statesList.standUp not allocated");
 
     case FSM_StateName::BALANCE_STAND:
-      return statesList.balanceStand;
-
-    case FSM_StateName::BALANCE_VBL:
-      return statesList.balance_vbl;
+      if (statesList.balanceStand)
+        return statesList.balanceStand;
+      else
+        throw std::runtime_error("statesList.balanceStand not allocated");
 
     case FSM_StateName::LAYDOWN:
-      return statesList.laydown;
+      if (statesList.laydown)
+        return statesList.laydown;
+      else
+        throw std::runtime_error("statesList.laydown not allocated");
 
     case FSM_StateName::TESTING:
-      return statesList.testing;
+      if (statesList.testing)
+        return statesList.testing;
+      else
+        throw std::runtime_error("statesList.testing not allocated");
 
     case FSM_StateName::LOCOMOTION:
+      if (statesList.locomotion)
+        return statesList.locomotion;
+      else
+        throw std::runtime_error("statesList.locomotion not allocated");
       return statesList.locomotion;
 
     case FSM_StateName::RECOVERY_STAND:
-      return statesList.recoveryStand;
-
-    case FSM_StateName::VISION:
-      return statesList.vision;
-
-    case FSM_StateName::BACKFLIP:
-      return statesList.backflip;
+      if (statesList.recoveryStand)
+        return statesList.recoveryStand;
+      else
+        throw std::runtime_error("statesList.recoveryStand not allocated");
 
     case FSM_StateName::TESTING_CV:
-      return statesList.testingCV;
-
-      // case FSM_StateName::FRONTJUMP:
-      //   return statesList.frontJump;
+      if (statesList.testingCV)
+        return statesList.testingCV;
+      else
+        throw std::runtime_error("statesList.testingCV not allocated");
 
     default:
       return statesList.invalid;
@@ -390,8 +385,7 @@ void ControlFSM<T>::printInfo(int opt)
         }
         else if (operatingMode == FSM_OperatingMode::TRANSITIONING)
         {
-          std::cout << "Operating Mode: TRANSITIONING from " << currentState->stateString << " to " << nextState->stateString
-                    << "\n";
+          std::cout << "Operating Mode: TRANSITIONING from " << currentState->stateString << " to " << nextState->stateString << "\n";
         }
         else if (operatingMode == FSM_OperatingMode::ESTOP)
         {
@@ -410,16 +404,12 @@ void ControlFSM<T>::printInfo(int opt)
       break;
 
     case 1: // Initializing FSM State transition
-      std::cout << "[CONTROL FSM] Transition initialized from " << currentState->stateString << " to " << nextState->stateString
-                << "\n"
-                << std::endl;
+      std::cout << "[CONTROL FSM] Transition initialized from " << currentState->stateString << " to " << nextState->stateString << "\n" << std::endl;
 
       break;
 
     case 2: // Finalizing FSM State transition
-      std::cout << "[CONTROL FSM] Transition finalizing from " << currentState->stateString << " to " << nextState->stateString
-                << "\n"
-                << std::endl;
+      std::cout << "[CONTROL FSM] Transition finalizing from " << currentState->stateString << " to " << nextState->stateString << "\n" << std::endl;
 
       break;
   }

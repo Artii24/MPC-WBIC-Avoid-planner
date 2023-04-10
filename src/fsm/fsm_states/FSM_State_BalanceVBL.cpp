@@ -16,7 +16,8 @@ using std::endl;
  * @param _controlFSMData holds all of the relevant control data
  */
 template<typename T>
-FSM_State_BalanceVBL<T>::FSM_State_BalanceVBL(ControlFSMData<T>* _controlFSMData) : FSM_State<T>(_controlFSMData, FSM_StateName::BALANCE_VBL, "BALANCE_VBL")
+FSM_State_BalanceVBL<T>::FSM_State_BalanceVBL(ControlFSMData<T>* _controlFSMData)
+  : FSM_State<T>(_controlFSMData, FSM_StateName::BALANCE_VBL, "BALANCE_VBL")
 {
   _data = _controlFSMData;
   balanceController = new BalanceController();
@@ -82,19 +83,11 @@ void FSM_State_BalanceVBL<T>::runBalanceController()
     se_xfb[10 + i] = (double)_data->stateEstimator->getResult().vBody(i);
 
     // Set the translational and orientation gains
-    // kpCOM[i] = 50.0;
-    // kdCOM[i] = 10.0;
-    // kpBase[i] = 200;
-    // kdBase[i] = 20;
-
     kpCOM[i] = 5.0e-1;
     kdCOM[i] = 5.0e-1;
     kpBase[i] = 1.0e2;
     kdBase[i] = 5.0e-1;
   }
-
-  // kpBase[1] *= -1.0;
-  // kdBase[1] *= -1.0;
 
   p_des[0] = 0.0;
   p_des[1] = 0.0;
@@ -124,8 +117,6 @@ void FSM_State_BalanceVBL<T>::runBalanceController()
   balanceController->set_PDgains(kpCOM, kdCOM, kpBase, kdBase);
   balanceController->set_desiredTrajectoryData(rpy, p_des, omegaDes, v_des);
   balanceController->SetContactData(contactStateScheduled, minForces, maxForces);
-  // cout << "O_err: " << O_err[0] << " " << O_err[1] << " " << O_err[2] << endl;
-  // cout << rpy[0] - _data->stateEstimator->getResult().rpy[0] << " " << rpy[1] - _data->stateEstimator->getResult().rpy[1] << " " << _data->stateEstimator->getResult().rpy[2] << endl;
   balanceController->updateProblemData(se_xfb, pFeet, p_des, p_act, v_des, v_act, O_err, 0.0);
 
   double fOpt[12];
@@ -192,11 +183,12 @@ void FSM_State_BalanceVBL<T>::runBalanceControllerVBL()
     se_xfb[10 + i] = (double)_data->stateEstimator->getResult().vBody(i);
 
     // Set the translational and orientation gains
-    kpCOM[i] = 50.0;
-    kdCOM[i] = 10.0;
-    kpBase[i] = 200;
-    kdBase[i] = 20;
+    kpCOM[i] = 5.0;
+    kdCOM[i] = 1.0;
+    kpBase[i] = 20;
+    kdBase[i] = 2;
   }
+
   p_des[0] = 0.0;
   p_des[1] = 0.0;
   p_des[2] = 0.25;
@@ -204,6 +196,8 @@ void FSM_State_BalanceVBL<T>::runBalanceControllerVBL()
   v_des[0] = 0.0;
   v_des[1] = 0.0;
   v_des[2] = 0.0;
+
+  cout << "pz act: " << p_act[2] << endl;
 
   Vec3<T> pFeetVec;
   Vec3<T> pFeetVecCOM;
@@ -218,51 +212,39 @@ void FSM_State_BalanceVBL<T>::runBalanceControllerVBL()
     pFeet[leg * 3 + 2] = (double)pFeetVecCOM[2];
   }
   double f_ref_in[12] = { 0 };
-  double f = 10;
-  f_ref_in[2] = f;
-  f_ref_in[5] = f;
-  f_ref_in[8] = f;
-  f_ref_in[11] = f;
-
-  // reference_grf->set_alpha_control(0.01);
-  // reference_grf->set_mass(mass);
-  // reference_grf->set_RobotLimits();
-  // reference_grf->set_worldData();
-  // reference_grf->SetContactData(contactStateScheduled, minForces, maxForces, 100, 4);
-  // reference_grf->updateProblemData(pFeet, p_des);
+  double f = 9.81 * 13.9;
+  f_ref_in[2] = f / 4.0;
+  f_ref_in[5] = f / 4.0;
+  f_ref_in[8] = f / 4.0;
+  f_ref_in[11] = f / 4.0;
 
   double f_opt_in[4];
-  // reference_grf->solveQP_nonThreaded(f_opt_in);
 
-  f_ref_in[2] = f_opt_in[0];
-  f_ref_in[5] = f_opt_in[1];
-  f_ref_in[8] = f_opt_in[2];
-  f_ref_in[11] = f_opt_in[3];
+  double Q_x[3] = { 1, 1, 10000 };
+  double Q_dx[3] = { 1e-1, 1e-1, 100 };
+  double Q_w[3] = { 1e-1, 30, 10 };
+  double Q_dw[3] = { 1e-1, 30, 10 };
 
-  // cout << "f_ref_in: " << f_ref_in[2] << endl;
-
-  double Q_x[3] = { 1 };
-  double Q_dx[3] = { 1 };
-  double Q_w[3] = { 1 };
-  double Q_dw[3] = { 1 };
+  contactStateScheduled[0] = 1;
+  contactStateScheduled[1] = 1;
+  contactStateScheduled[2] = 1;
+  contactStateScheduled[3] = 1;
 
   balance_controller_vbl->set_desiredTrajectoryData(rpy, p_des, omegaDes, v_des);
   balance_controller_vbl->SetContactData(contactStateScheduled, minForces, maxForces, 0, 4);
   balance_controller_vbl->set_worldData();
   balance_controller_vbl->set_LQR_weights(Q_x, Q_dx, Q_w, Q_dw, 1.0e-2, 1.0e-2);
   balance_controller_vbl->set_RobotLimits();
+  balance_controller_vbl->set_reference_GRF(f_ref_in);
   balance_controller_vbl->updateProblemData(se_xfb, pFeet, pFeet, rpy, rpy_act);
-  // balance_controller_vbl->set_reference_GRF(f_ref_in);
 
   double fOpt[12];
   Eigen::VectorXd f_unc = balance_controller_vbl->getFunc();
 
   for (uint8_t i = 0; i < 12; i++)
   {
-    fOpt[i] = f_unc(i);
+    fOpt[i] = f_unc(i) + f_ref_in[i];
   }
-
-  // balance_controller_vbl->solveQP_nonThreaded(fOpt);
 
   footFeedForwardForces = Mat34<T>::Zero();
 
@@ -274,7 +256,7 @@ void FSM_State_BalanceVBL<T>::runBalanceControllerVBL()
     Vec3<float> f_ff;
     f_ff << (T)fOpt[leg * 3], (T)fOpt[leg * 3 + 1], (T)fOpt[leg * 3 + 2];
 
-    _data->legController->commands[leg].forceFeedForward = f_ff;
+    _data->legController->commands[leg].forceFeedForward = -f_ff;
   }
 
   cout << fOpt[0] << endl;
@@ -291,6 +273,13 @@ void FSM_State_BalanceVBL<T>::run()
 {
   // runBalanceController();
   runBalanceControllerVBL();
+
+  for (uint8_t foot = 0; foot < 4; foot++)
+  {
+    geometry_msgs::Point point;
+    point = ros::toMsg(this->_data->legController->datas[foot].p + this->_data->quadruped->getHipLocation(foot));
+    this->_data->debug->last_p_local_stance[foot] = point;
+  }
 }
 
 /**
@@ -325,9 +314,7 @@ FSM_StateName FSM_State_BalanceVBL<T>::checkTransition()
       break;
 
     default:
-      std::cout << "[CONTROL FSM] Bad Request: Cannot transition from "
-                << K_BALANCE_VBL << " to "
-                << this->_data->userParameters->FSM_State << std::endl;
+      std::cout << "[CONTROL FSM] Bad Request: Cannot transition from " << K_BALANCE_VBL << " to " << this->_data->userParameters->FSM_State << std::endl;
   }
 
   // Get the next state
@@ -373,8 +360,6 @@ template<typename T>
 void FSM_State_BalanceVBL<T>::onExit()
 {
   // Nothing to clean up when exiting
-  // this->_data->legController->zeroCommand();
-
   this->_data->legController->setEnabled(false);
 }
 

@@ -2,11 +2,11 @@
 #include "RobotState.h"
 #include "common_types.h"
 #include "convexMPC_interface.h"
+#include <JCQP/QpProblem.h>
+#include <Utilities/Timer.h>
 #include <cmath>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/unsupported/Eigen/MatrixFunctions>
-#include <JCQP/QpProblem.h>
-#include <Utilities/Timer.h>
 #include <qpOASES/include/qpOASES.hpp>
 #include <stdio.h>
 #include <sys/time.h>
@@ -51,20 +51,11 @@ u8 real_allocated = 0;
 char var_elim[2000];
 char con_elim[2000];
 
-mfp* get_q_soln()
-{
-  return q_soln;
-}
+mfp* get_q_soln() { return q_soln; }
 
-s8 near_zero(fpt a)
-{
-  return (a < 0.01 && a > -.01);
-}
+s8 near_zero(fpt a) { return (a < 0.01 && a > -.01); }
 
-s8 near_one(fpt a)
-{
-  return near_zero(a - 1);
-}
+s8 near_one(fpt a) { return near_zero(a - 1); }
 void matrix_to_real(qpOASES::real_t* dst, Matrix<fpt, Dynamic, Dynamic> src, s16 rows, s16 cols)
 {
   s32 a = 0;
@@ -168,8 +159,6 @@ void resize_qp_mats(s16 horizon)
   qH.setZero();
   eye_12h.setIdentity();
 
-  // TODO: use realloc instead of free/malloc on size changes
-
   if (real_allocated)
   {
 
@@ -229,7 +218,13 @@ inline Matrix<fpt, 3, 3> cross_mat(Matrix<fpt, 3, 3> I_inv, Matrix<fpt, 3, 1> r)
 }
 
 // continuous time state space matrices.
-void ct_ss_mats(Matrix<fpt, 3, 3> I_world, fpt m, Matrix<fpt, 3, 4> r_feet, Matrix<fpt, 3, 3> R_yaw, Matrix<fpt, 13, 13>& A, Matrix<fpt, 13, 12>& B, float x_drag)
+void ct_ss_mats(Matrix<fpt, 3, 3> I_world,
+                fpt m,
+                Matrix<fpt, 3, 4> r_feet,
+                Matrix<fpt, 3, 3> R_yaw,
+                Matrix<fpt, 13, 13>& A,
+                Matrix<fpt, 13, 12>& B,
+                float x_drag)
 {
   A.setZero();
   A(3, 9) = 1.f;
@@ -248,76 +243,10 @@ void ct_ss_mats(Matrix<fpt, 3, 3> I_world, fpt m, Matrix<fpt, 3, 4> r_feet, Matr
     B.block(6, b * 3, 3, 3) = cross_mat(I_inv, r_feet.col(b));
     B.block(9, b * 3, 3, 3) = Matrix<fpt, 3, 3>::Identity() / m;
   }
-
-  // Eigen::MatrixXd tempSkewMatrix3;
-  // Eigen::MatrixXd A_LQR;
-  // Eigen::MatrixXd B_LQR;
-
-  // Eigen::VectorXd x_COM_world;
-  // Eigen::VectorXd xdot_COM_world;
-  // Eigen::VectorXd omega_b_world;
-  // Eigen::VectorXd omega_b_body; // new
-  // Eigen::VectorXd quat_b_world;
-  // Eigen::MatrixXd R_b_world;
-  // Eigen::MatrixXd p_feet;
-
-  // /* Desired Kinematics */
-  // Eigen::VectorXd x_COM_world_desired;
-  // Eigen::VectorXd xdot_COM_world_desired;
-  // Eigen::VectorXd xddot_COM_world_desired;
-  // Eigen::VectorXd omega_b_world_desired;
-  // Eigen::VectorXd omega_b_body_desired; // new
-  // Eigen::VectorXd omegadot_b_world_desired;
-  // Eigen::MatrixXd R_b_world_desired;
-  // Eigen::MatrixXd p_feet_desired; // new
-
-  // Eigen::VectorXd tempVector3;
-
-  // // Temporary variables for block assignment
-  // Eigen::MatrixXd tempBlock;
-  // tempBlock.setZero(3, 3);
-  // Eigen::VectorXd rd;
-  // rd.resize(3, 1);
-  // Eigen::MatrixXd rd_hat;
-  // rd_hat.resize(3, 3);
-
-  // // Update the A matrix in sdot = A*s+B*df
-  // tempSkewMatrix3.setIdentity();
-  // A_LQR.block<3, 3>(0, 3) << tempSkewMatrix3;
-  // A_LQR.block<3, 3>(6, 9) << tempSkewMatrix3;
-  // crossMatrix(tempSkewMatrix3, -omega_b_body_desired);
-  // A_LQR.block<3, 3>(6, 6) << tempSkewMatrix3;
-
-  // uint8_t num_contact_points = 4;
-
-  // omega_b_body = R_b_world.transpose() * omega_b_world;
-  // omega_b_body_desired = R_b_world_desired.transpose() * omega_b_world_desired;
-
-  // for (int i = 0; i < num_contact_points; i++)
-  // {
-  //   tempVector3 << f_ref_world(3 * i), f_ref_world(3 * i + 1), f_ref_world(3 * i + 2);
-  //   crossMatrix(tempSkewMatrix3, tempVector3);
-  //   tempBlock << tempBlock + Ig.inverse() * R_b_world_desired.transpose() * tempSkewMatrix3;
-  // }
-  // A_LQR.block<3, 3>(9, 0) << tempBlock;
-
-  // tempBlock.setZero();
-  // for (int i = 0; i < num_contact_points; i++)
-  // {
-  //   tempVector3 << f_ref_world(3 * i), f_ref_world(3 * i + 1), f_ref_world(3 * i + 2);
-  //   rd << p_feet_desired.col(i);
-  //   crossMatrix(rd_hat, rd);
-  //   crossMatrix(tempSkewMatrix3, rd_hat * tempVector3);
-  //   tempBlock << tempBlock + Ig.inverse() * R_b_world_desired.transpose() * tempSkewMatrix3;
-  // }
-
-  // A_LQR.block<3, 3>(9, 6) << tempBlock;
 }
 
 void quat_to_rpy(Quaternionf q, Matrix<fpt, 3, 1>& rpy)
 {
-  // from my MATLAB implementation
-
   // edge case!
   fpt as = t_min(-2. * (q.x() * q.z() - q.w() * q.y()), .99999);
   rpy(0) = atan2(2.f * (q.x() * q.y() + q.w() * q.z()), sq(q.w()) + sq(q.x()) - sq(q.y()) - sq(q.z()));
@@ -376,8 +305,6 @@ void solve_mpc(update_data_t* update, problem_setup* setup)
   // initial state (13 state representation)
   x_0 << rpy(2), rpy(1), rpy(0), rs.p, rs.w, rs.v, -9.8f;
   I_world = rs.R_yaw * rs.I_body * rs.R_yaw.transpose(); // original
-  // I_world = rs.R_yaw.transpose() * rs.I_body * rs.R_yaw;
-  // cout<<rs.R_yaw<<endl;
   ct_ss_mats(I_world, rs.m, rs.r_feet, rs.R_yaw, A_ct, B_ct_r, update->x_drag);
 
 #ifdef K_PRINT_EVERYTHING
@@ -392,11 +319,14 @@ void solve_mpc(update_data_t* update, problem_setup* setup)
 
   // weights
   Matrix<fpt, 13, 1> full_weight;
+
   for (u8 i = 0; i < 12; i++)
   {
     full_weight(i) = update->weights[i];
   }
+
   full_weight(12) = 0.f;
+
   S.diagonal() = full_weight.replicate(setup->horizon, 1);
 
   // trajectory
@@ -407,7 +337,6 @@ void solve_mpc(update_data_t* update, problem_setup* setup)
       X_d(13 * i + j, 0) = update->traj[12 * i + j];
     }
   }
-  // cout<<"XD:\n"<<X_d<<endl;
 
   // note - I'm not doing the shifting here.
   s16 k = 0;
@@ -438,6 +367,7 @@ void solve_mpc(update_data_t* update, problem_setup* setup)
   qg = 2 * B_qp.transpose() * S * (A_qp * x_0 - X_d);
 
   QpProblem<double> jcqp(setup->horizon * 12, setup->horizon * 20);
+
   // use jcqp = 0
   if (update->use_jcqp == 1)
   {
@@ -514,12 +444,13 @@ void solve_mpc(update_data_t* update, problem_setup* setup)
         }
       }
     }
-    // if(new_vars != num_variables)
+
     if (1 == 1)
     {
       int var_ind[new_vars];
       int con_ind[new_cons];
       int vc = 0;
+
       for (int i = 0; i < num_variables; i++)
       {
         if (!var_elim[i])
@@ -528,11 +459,14 @@ void solve_mpc(update_data_t* update, problem_setup* setup)
           {
             printf("BAD ERROR 1\n");
           }
+
           var_ind[vc] = i;
           vc++;
         }
       }
+
       vc = 0;
+
       for (int i = 0; i < num_constraints; i++)
       {
         if (!con_elim[i])
@@ -545,6 +479,7 @@ void solve_mpc(update_data_t* update, problem_setup* setup)
           vc++;
         }
       }
+
       for (int i = 0; i < new_vars; i++)
       {
         int olda = var_ind[i];
@@ -564,6 +499,7 @@ void solve_mpc(update_data_t* update, problem_setup* setup)
           A_red[con * new_vars + st] = cval;
         }
       }
+
       for (int i = 0; i < new_cons; i++)
       {
         int old = con_ind[i];
@@ -579,8 +515,8 @@ void solve_mpc(update_data_t* update, problem_setup* setup)
         op.setToMPC();
         op.printLevel = qpOASES::PL_NONE;
         problem_red.setOptions(op);
-        // int_t nWSR = 50000;
 
+        // H g A lb ub lbA ubA nWSR
         int rval = problem_red.init(H_red, g_red, A_red, NULL, NULL, lb_red, ub_red, nWSR);
         (void)rval;
         int rval2 = problem_red.getPrimalSolution(q_red);
@@ -644,13 +580,6 @@ void solve_mpc(update_data_t* update, problem_setup* setup)
         {
           reducedProblem.l[r] = lb_red[r];
         }
-
-        //        jcqp.A = fmat.cast<double>();
-        //        jcqp.P = qH.cast<double>();
-        //        jcqp.q = qg.cast<double>();
-        //        jcqp.u = U_b.cast<double>();
-        //        for(s16 i = 0; i < 20*setup->horizon; i++)
-        //          jcqp.l[i] = 0.;
 
         reducedProblem.settings.sigma = update->sigma;
         reducedProblem.settings.alpha = update->solver_alpha;

@@ -291,8 +291,6 @@ c_int polish(OSQPWorkspace *work) {
   } else { // Polishing failed
     work->info->status_polish = -1;
 
-    // TODO: Try to find a better solution on the line connecting ADMM
-    //       and polished solution
   }
 
   // Memory clean-up

@@ -1,14 +1,15 @@
 #include <cstdio>
 #include <sstream>
 
-#include "directives.h"  // IWYU pragma: keep
-#include "scanner.h"     // IWYU pragma: keep
+#include "directives.h"                   // IWYU pragma: keep
+#include "dynacore_yaml-cpp/exceptions.h" // IWYU pragma: keep
+#include "dynacore_yaml-cpp/parser.h"
+#include "scanner.h" // IWYU pragma: keep
 #include "singledocparser.h"
 #include "token.h"
-#include "dynacore_yaml-cpp/exceptions.h"  // IWYU pragma: keep
-#include "dynacore_yaml-cpp/parser.h"
 
-namespace dynacore_YAML {
+namespace dynacore_YAML
+{
 class EventHandler;
 
 Parser::Parser() {}
@@ -17,21 +18,22 @@ Parser::Parser(std::istream& in) { Load(in); }
 
 Parser::~Parser() {}
 
-Parser::operator bool() const {
-  return m_pScanner.get() && !m_pScanner->empty();
-}
+Parser::operator bool() const { return m_pScanner.get() && !m_pScanner->empty(); }
 
-void Parser::Load(std::istream& in) {
+void Parser::Load(std::istream& in)
+{
   m_pScanner.reset(new Scanner(in));
   m_pDirectives.reset(new Directives);
 }
 
-bool Parser::HandleNextDocument(EventHandler& eventHandler) {
+bool Parser::HandleNextDocument(EventHandler& eventHandler)
+{
   if (!m_pScanner.get())
     return false;
 
   ParseDirectives();
-  if (m_pScanner->empty()) {
+  if (m_pScanner->empty())
+  {
     return false;
   }
 
@@ -40,22 +42,27 @@ bool Parser::HandleNextDocument(EventHandler& eventHandler) {
   return true;
 }
 
-void Parser::ParseDirectives() {
+void Parser::ParseDirectives()
+{
   bool readDirective = false;
 
-  while (1) {
-    if (m_pScanner->empty()) {
+  while (1)
+  {
+    if (m_pScanner->empty())
+    {
       break;
     }
 
     Token& token = m_pScanner->peek();
-    if (token.type != Token::DIRECTIVE) {
+    if (token.type != Token::DIRECTIVE)
+    {
       break;
     }
 
     // we keep the directives from the last document if none are specified;
     // but if any directives are specific, then we reset them
-    if (!readDirective) {
+    if (!readDirective)
+    {
       m_pDirectives.reset(new Directives);
     }
 
@@ -65,20 +72,27 @@ void Parser::ParseDirectives() {
   }
 }
 
-void Parser::HandleDirective(const Token& token) {
-  if (token.value == "YAML") {
+void Parser::HandleDirective(const Token& token)
+{
+  if (token.value == "YAML")
+  {
     HandleYamlDirective(token);
-  } else if (token.value == "TAG") {
+  }
+  else if (token.value == "TAG")
+  {
     HandleTagDirective(token);
   }
 }
 
-void Parser::HandleYamlDirective(const Token& token) {
-  if (token.params.size() != 1) {
+void Parser::HandleYamlDirective(const Token& token)
+{
+  if (token.params.size() != 1)
+  {
     throw ParserException(token.mark, ErrorMsg::YAML_DIRECTIVE_ARGS);
   }
 
-  if (!m_pDirectives->version.isDefault) {
+  if (!m_pDirectives->version.isDefault)
+  {
     throw ParserException(token.mark, ErrorMsg::REPEATED_YAML_DIRECTIVE);
   }
 
@@ -86,39 +100,45 @@ void Parser::HandleYamlDirective(const Token& token) {
   str >> m_pDirectives->version.major;
   str.get();
   str >> m_pDirectives->version.minor;
-  if (!str || str.peek() != EOF) {
-    throw ParserException(
-        token.mark, std::string(ErrorMsg::YAML_VERSION) + token.params[0]);
+  if (!str || str.peek() != EOF)
+  {
+    throw ParserException(token.mark, std::string(ErrorMsg::YAML_VERSION) + token.params[0]);
   }
 
-  if (m_pDirectives->version.major > 1) {
+  if (m_pDirectives->version.major > 1)
+  {
     throw ParserException(token.mark, ErrorMsg::YAML_MAJOR_VERSION);
   }
 
   m_pDirectives->version.isDefault = false;
-  // TODO: warning on major == 1, minor > 2?
 }
 
-void Parser::HandleTagDirective(const Token& token) {
+void Parser::HandleTagDirective(const Token& token)
+{
   if (token.params.size() != 2)
     throw ParserException(token.mark, ErrorMsg::TAG_DIRECTIVE_ARGS);
 
   const std::string& handle = token.params[0];
   const std::string& prefix = token.params[1];
-  if (m_pDirectives->tags.find(handle) != m_pDirectives->tags.end()) {
+  if (m_pDirectives->tags.find(handle) != m_pDirectives->tags.end())
+  {
     throw ParserException(token.mark, ErrorMsg::REPEATED_TAG_DIRECTIVE);
   }
 
   m_pDirectives->tags[handle] = prefix;
 }
 
-void Parser::PrintTokens(std::ostream& out) {
-  if (!m_pScanner.get()) {
+void Parser::PrintTokens(std::ostream& out)
+{
+  if (!m_pScanner.get())
+  {
     return;
   }
 
-  while (1) {
-    if (m_pScanner->empty()) {
+  while (1)
+  {
+    if (m_pScanner->empty())
+    {
       break;
     }
 

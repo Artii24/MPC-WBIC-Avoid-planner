@@ -98,7 +98,7 @@ class SQProblemSchur : public SQProblem
 		virtual returnValue reset( );
 
 		/** Resets Schur complement.  This sets up the KKT matrix for the
-			current activities, copies the activities, etc. TODO: Return values */
+			current activities, copies the activities, etc. */
 		returnValue resetSchurComplement( BooleanType allowInertiaCorrection );
 
 		/** Return the total number of sparse matrix factorizations performed so far. */
