@@ -60,6 +60,7 @@ void FSM_State_Locomotion<T>::run()
 {
   // Call the locomotion control logic for this iteration
   LocomotionControlStep();
+  this->_metric->debugPrint();
 }
 
 /**
@@ -256,6 +257,14 @@ void FSM_State_Locomotion<T>::onExit()
 template<typename T>
 void FSM_State_Locomotion<T>::LocomotionControlStep()
 {
+  // StateEstimate<T> stateEstimate = this->_data->_stateEstimator->getResult();
+
+  // Contact state logic
+  // estimateContact();
+
+  // cout << "[FSM_State_Locomotion] LocomotionControlStep start" << endl;
+  // this->_data->userParameters->use_wbc = 0;
+
   cMPCOld->run<T>(*this->_data);
 
   Vec3<T> pDes_backup[4];

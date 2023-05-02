@@ -47,6 +47,7 @@ ControlFSM<T>::ControlFSM(Quadruped<T>* quadruped, StateEstimatorContainer<T>* s
   statesList.balanceStand = new FSM_State_BalanceStand<T>(&data);
   statesList.laydown = new FSM_State_LayDown<T>(&data);
   statesList.testing = new FSM_State_Testing<T>(&data);
+  statesList.stairs = new FSM_State_Stairs<T>(&data);
   statesList.recoveryStand = new FSM_State_RecoveryStand<T>(&data);
   statesList.balance_vbl = new FSM_State_BalanceVBL<T>(&data);
   statesList.testingCV = new FSM_State_Testing_Cv<T>(&data);

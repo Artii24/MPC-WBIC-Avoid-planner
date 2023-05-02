@@ -167,6 +167,7 @@ private:
   int iterationCounter = 0;
   Vec3<float> f_ff[4];
   Vec4<float> swingTimes;
+  Vec4<float> cost;
   FootSwingTrajectory<float> footSwingTrajectories[4];
   OffsetDurationGait trotting, trot_contact, standing, walking, two_leg_balance, give_hand, trot_long;
   Mat3<float> Kp, Kd, Kp_stance, Kd_stance;

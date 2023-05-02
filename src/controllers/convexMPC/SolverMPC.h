@@ -5,6 +5,7 @@
 #include <eigen3/Eigen/Dense>
 #include <iostream>
 #include <stdio.h>
+#include "debug.hpp"
 
 using Eigen::Matrix;
 using Eigen::Quaterniond;
@@ -59,3 +60,5 @@ void ct_ss_mats(Matrix<fpt, 3, 3> I_world, fpt m, Matrix<fpt, 3, 4> r_feet, Matr
 void resize_qp_mats(s16 horizon);
 void c2qp(Matrix<fpt, 13, 13> Ac, Matrix<fpt, 13, 12> Bc, fpt dt, s16 horizon);
 mfp* get_q_soln();
+Eigen::Matrix<float, 13, 1>  printcost(problem_setup* setup);
+#endif

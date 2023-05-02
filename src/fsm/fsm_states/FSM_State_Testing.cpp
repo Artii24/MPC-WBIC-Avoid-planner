@@ -191,7 +191,25 @@ void FSM_State_Testing<T>::test2(float h)
   static bool is_start = true;
 
   Vec3<float> p0(0, -0.15, -0.2);
-  Vec3<float> p1(0, -0.25, -0.2);
+  Vec3<float> p1(0, -0.25, -0.201);
+
+  // Vec3<float> p0(0, -0.1, -0.2);
+  // Vec3<float> p1(0, -0.3, -0.2);
+
+  // near sholder
+  // x 0.047
+  // y -0.15
+  // z -0.073
+
+  // far 1
+  // x 0.068
+  // y -0.255
+  // z -0.259
+
+  // far 2
+  // x -0.178
+  // y -0.163
+  // z -0.2
   Vec3<float> pDes(0.047, -0.15, -0.073);
   static bool flag = false;
 
@@ -255,7 +273,7 @@ void FSM_State_Testing<T>::test2(float h)
   if (firstSwing[foot])
   {
     firstSwing[foot] = false;
-    footSwingTrajectories[foot].setHeight(h);
+    footSwingTrajectories[foot].setHeight(Vec3<float>(0,0.05,h));
     footSwingTrajectories[foot].setInitialPosition(_ini_foot_pos[foot]);
     footSwingTrajectories[foot].setFinalPosition(p0);
   }
@@ -285,7 +303,7 @@ void FSM_State_Testing<T>::test2(float h)
     }
   }
 
-  footSwingTrajectories[foot].computeSwingTrajectoryBezier(progress, 2);
+  footSwingTrajectories[foot].computeSwingTrajectoryBezier(progress, 2,this->_data->_quadruped->getSideSign(foot));
 
   Vec3<float> pDesFootWorld = footSwingTrajectories[foot].getPosition();
   Vec3<float> vDesFootWorld = footSwingTrajectories[foot].getVelocity();
@@ -293,6 +311,27 @@ void FSM_State_Testing<T>::test2(float h)
   this->_data->legController->commands[foot].vDes = vDesFootWorld;
   this->_data->debug->all_legs_info.leg.at(foot).p_des = ros::toMsg(pDesFootWorld);
   this->_data->debug->all_legs_info.leg.at(foot).v_des = ros::toMsg(vDesFootWorld);
+
+  // Vec3<float> p_des = footSwingTrajectories[0].getPosition();
+  // Vec3<float> v_des = footSwingTrajectories[0].getVelocity();
+
+  // static Vec3<float> q_des(0, 0, 0);
+  // static Vec3<float> dq_des(0, 0, 0);
+  // q_des(1) = -0.5 * sin((float)iter / 1000.0) - 0.5 - 0.5;
+  // q_des(2) = 0.5 * sin((float)iter / 1000.0) + 0.5 + 1.5;
+
+  // Vec3<float> q_des(0, 0, 0);
+  // Vec3<float> dq_des(0, 0, 0);
+
+  //q_des = this->findAngles(0, p_des);
+  //dq_des = computeLegJacobianAndPosition
+  // this->jointPDControl(0, q_des, dq_des);
+  // this->lowLeveljointPDControl(0, q_des, dq_des);
+  // this->_data->_legController->is_low_level = true;
+
+  // Vec3<float> p_act = this->_data->_legController->datas[0].p;
+  // Vec3<float> q_eval = this->findAngles(0, p_act);
+  // cout << "q_eval: " << q_eval << endl;
 
   static Vec3<T> q(0, 0, 0);
   static Vec3<T> dq(0, 0, 0);

@@ -21,6 +21,13 @@
 #include "FSM_State_RecoveryStand.h"
 #include "FSM_State_StandUp.h"
 #include "FSM_State_Testing.h"
+#include "FSM_State_Stairs.h"
+#include "FSM_State_Vision.h"
+#include "FSM_State_BalanceVBL.h"
+
+// #include "FSM_State_FrontJump.h"
+// #include "FSM_State_ImpedanceControl.h"
+// #include "FSM_State_JointPD.h"
 #include "FSM_State_Testing_cv.h"
 
 /**
@@ -50,6 +57,9 @@ struct FSM_StatesList
   FSM_State_RecoveryStand<T>* recoveryStand = nullptr;
   FSM_State_BalanceVBL<T>* balance_vbl = nullptr;
   FSM_State_Testing_Cv<T>* testingCV = nullptr;
+  FSM_State_Stairs<T>* stairs = nullptr;
+  FSM_State_BackFlip<T>* backflip = nullptr;
+  //FSM_State_Vision<T>* vision;
 };
 
 /**
@@ -95,6 +105,7 @@ public:
 
   // Contains all of the control related data
   ControlFSMData<T> data;
+
 
   // FSM state information
   FSM_StatesList<T> statesList; // holds all of the FSM States

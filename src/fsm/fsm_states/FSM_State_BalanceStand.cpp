@@ -129,6 +129,8 @@ void FSM_State_BalanceStand<T>::run()
       BalanceStandGiveHand();
       break;
   }
+    BalanceStandStep();
+  this->_metric->debugPrint();
 }
 
 /**

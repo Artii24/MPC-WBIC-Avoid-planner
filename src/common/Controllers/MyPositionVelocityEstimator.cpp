@@ -7,30 +7,27 @@
  *  - foot positions/velocities in body/world frame
  */
 
-#include "Controllers/PositionVelocityEstimator.h"
-#include <cmath>
-#include <iostream>
-#include <iterator>
-#include <ostream>
+#include "Controllers/MyPositionVelocityEstimator.h"
 
 /*!
  * Initialize the state estimator
  */
-template<typename T>
-void LinearKFPositionVelocityEstimator<T>::setup()
+template <typename T>
+void KFPositionVelocityEstimator<T>::setup()
 {
-  T dt = this->_stateEstimatorData.parameters->controller_dt;
-  _xhat.setZero();
+  T dt = 0.002;
+  // T dt = this->_stateEstimatorData.parameters->controller_dt;
+  _myxhat.setZero();
   _ps.setZero();
   _vs.setZero();
   _A.setZero();
   _A.block(0, 0, 3, 3) = Eigen::Matrix<T, 3, 3>::Identity();
-  _A.block(0, 3, 3, 3) = dt * Eigen::Matrix<T, 3, 3>::Identity();
+  _A.block(0, 3, 3, 3) =  dt *Eigen::Matrix<T, 3, 3>::Identity();//
   _A.block(3, 3, 3, 3) = Eigen::Matrix<T, 3, 3>::Identity();
   _A.block(6, 6, 12, 12) = Eigen::Matrix<T, 12, 12>::Identity();
   _B.setZero();
   _B.block(0, 0, 3, 3) = dt * dt * Eigen::Matrix<T, 3, 3>::Identity()/2;
-  _B.block(3, 0, 3, 3) = dt * Eigen::Matrix<T, 3, 3>::Identity();
+  _B.block(3, 0, 3, 3) =  Eigen::Matrix<T, 3, 3>::Identity();//dt *
   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> C1(3, 6);
   C1 << Eigen::Matrix<T, 3, 3>::Identity(), Eigen::Matrix<T, 3, 3>::Zero();
   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> C2(3, 6);
@@ -52,98 +49,57 @@ void LinearKFPositionVelocityEstimator<T>::setup()
   _P.setIdentity();
   _P = T(100) * _P;
   _Q0.setIdentity();
-  _Q0.block(0, 0, 3, 3) = (dt / 40.f) * Eigen::Matrix<T, 3, 3>::Identity();
+  _Q0.block(0, 0, 3, 3) = (dt / 20.f) * Eigen::Matrix<T, 3, 3>::Identity();
   _Q0.block(3, 3, 3, 3) =
-      (dt * 9.8f / 40.f) * Eigen::Matrix<T, 3, 3>::Identity();
+      (dt * 9.8f / 20.f) * Eigen::Matrix<T, 3, 3>::Identity();
   _Q0.block(6, 6, 12, 12) = dt * Eigen::Matrix<T, 12, 12>::Identity();
   _R0.setIdentity();
-
-  this->_stateEstimatorData.result->position.setZero();
-  this->_stateEstimatorData.result->vWorld.setZero();
-  a_old = this->_stateEstimatorData.result->aWorld ;//+ Vec3<T>(0, 0, T(-9.81))
+  a_old = this->_stateEstimatorData.result->aWorld;
   a_filt <<0,0,0;
   da_filt <<0,0,0;
-  a_world <<0,0,0;
+  _a_world <<0,0,0;
+  _a_worldx <<0,0;
+  _a_worldy <<0,0;
+  _a_worldz <<0,0;
   da_filt_prev << 0,0,0;
-}
-
-template<typename T>
-float LinearKFPositionVelocityEstimator<T>::_getLocalBodyHeight()
-{
-  float z = 0;
-
-  static float A_res = 0.0;
-  static float B_res = 0.0;
-  static float C_res = 0.0;
-
-  Vec3<float> p[4];
-  Vec3<float> p_local[4];
-
-  p_local[0] = ros::fromMsg(this->_stateEstimatorData.debug->last_p_local_stance[0]);
-  p_local[1] = ros::fromMsg(this->_stateEstimatorData.debug->last_p_local_stance[1]);
-  p_local[2] = ros::fromMsg(this->_stateEstimatorData.debug->last_p_local_stance[2]);
-  p_local[3] = ros::fromMsg(this->_stateEstimatorData.debug->last_p_local_stance[3]);
-
-  Eigen::Matrix<float, 4, 3> P = Eigen::Matrix<float, 4, 3>::Zero(4, 3);
-
-  P.block(0, 0, 1, 3) = p_local[0].transpose();
-  P.block(1, 0, 1, 3) = p_local[1].transpose();
-  P.block(2, 0, 1, 3) = p_local[2].transpose();
-  P.block(3, 0, 1, 3) = p_local[3].transpose();
-
-  Vec3<float> K_solution = Vec3<float>::Zero();
-
-  if (P != Eigen::Matrix<float, 4, 3>::Zero(4, 3))
+  _Af.setZero();
+  _Af(0,0) = 0;
+  _Af(0,1) = 1;
+  _w = 1000.5;
+  _Af(1,0) = -_w*_w;
+  _Af(1,1) = -sqrt(2)*_w;
+  _Bf.setZero();
+  _Bf(1,0) = _w*_w;
+  _Cf.setZero();
+  _Cf(0,0)=1;
+  _Afd.setZero();
+  _Bfd.setZero();
+  _Ad.setZero();
+  _dAd.setZero();
+  // _dAd.block(0,0,18,18) = _A;
+  // _dAd.block(0,18,18,3) = dt*_B;
+  // _dAd.block(18,18,3,3) = Eigen::Matrix<T, 3, 3>::Identity();
+  for (int i=10;i>=1;i--)
   {
-    K_solution = (P.transpose() * P).inverse() * P.transpose() * Vec4<float>(1, 1, 1, 1);
+    _Afd = Eigen::Matrix<T, 2, 2>::Identity() + _Afd*_Af*dt/i;
+    // _Ad = Eigen::Matrix<T, 21, 21>::Identity() + _Ad*_dAd*dt/i;
   }
+  _Bfd = _Af.lu().solve(Eigen::Matrix<T, 2, 2>::Identity())*(_Afd - Eigen::Matrix<T, 2, 2>::Identity())*_Bf;
+  // _B = _Ad.block(0,18,18,3);
+  // _A = _Ad.block(0,0,18,18);
 
-  static float filter = 0.5;
-  static float f = 0.1;
-  float A = K_solution(0);
-  float B = K_solution(1);
-  float C = K_solution(2);
-  A_res = A_res * (1.0 - filter) + A * filter;
-  B_res = B_res * (1.0 - filter) + B * filter;
-  C_res = C_res * (1.0 - filter) + C * filter;
-
-  this->_stateEstimatorData.debug->mnk_plane.x = A_res;
-  this->_stateEstimatorData.debug->mnk_plane.y = B_res;
-  this->_stateEstimatorData.debug->mnk_plane.z = C_res;
-
-  float del = sqrt(A_res * A_res + B_res * B_res + C_res * C_res);
-  float pitch = acos(A / del) - M_PI / 2.0;
-  this->_stateEstimatorData.result->est_pitch_plane = pitch;
-
-  // z = 1 / sqrt(A * A + B * B + C * C);
-  z = 1 / sqrt(A_res * A_res + B_res * B_res + C_res * C_res);
-  static float z_prev = z;
-  // z = (1.0 - f) * z_prev + f * z;
-
-  if (std::isinf(z))
-  {
-    // ROS_ERROR("INF");
-    z = 0;
-  }
-
-  z_prev = z;
-  this->_stateEstimatorData.debug->body_info.pos_z_global = z;
-
-  return z;
 }
 
-template<typename T>
-LinearKFPositionVelocityEstimator<T>::LinearKFPositionVelocityEstimator()
-{
-}
+template <typename T>
+KFPositionVelocityEstimator<T>::KFPositionVelocityEstimator() {}
 
 /*!
  * Run state estimator
  */
-template<typename T>
-void LinearKFPositionVelocityEstimator<T>::run()
+template <typename T>
+void KFPositionVelocityEstimator<T>::run()
 {
-    static uint16_t counter = 0;
+  static uint16_t counter = 0;
     if (counter <= 1000)
   {
     counter++;
@@ -157,6 +113,7 @@ void LinearKFPositionVelocityEstimator<T>::run()
     T sensor_noise_pimu_rel_foot = this->_stateEstimatorData.parameters->foot_sensor_noise_position;
     T sensor_noise_vimu_rel_foot = this->_stateEstimatorData.parameters->foot_sensor_noise_velocity;
     T sensor_noise_zfoot = this->_stateEstimatorData.parameters->foot_height_sensor_noise;
+    // T contacts = this _>this->_stateEstimatorData->getContactSensorData()(leg_num);
 
     Eigen::Matrix<T, 18, 18> Q = Eigen::Matrix<T, 18, 18>::Identity();
     Q.block(0, 0, 3, 3) = _Q0.block(0, 0, 3, 3) * process_noise_pimu;
@@ -177,17 +134,29 @@ void LinearKFPositionVelocityEstimator<T>::run()
     Mat3<T> Rbod = this->_stateEstimatorData.result->rBody.transpose();
     // in old code, Rbod * se_acc + g
     
-    Vec3<T> a = this->_stateEstimatorData.result->aWorld + g;//
-    // a_world += Vec3<T>((a[0]-a_old[0])/(T(0.0001)+(a[0]-a_old[0])*(a[0]-a_old[0])),//*(a[0]-a_old[0])*(a[0]-a_old[0])
-    //                   (a[1]-a_old[1])/(T(0.0001)+(a[1]-a_old[1])*(a[1]-a_old[1])),//*(a[1]-a_old[1])*(a[1]-a_old[1])
-    //                   (a[2]-a_old[2])/(T(0.0001)+(a[2]-a_old[2])*(a[2]-a_old[2])));//*(a[2]-a_old[2])*(a[2]-a_old[2])
-    
-    // da_filt <<  T(1.0)*(a_world[0]-a_filt[0])/(T(0.0001) +(a_world[0]-a_filt[0])*(a_world[0]-a_filt[0])),//(T(100.01) +(a_world[0]-a_filt[0])*(a_world[0]-a_filt[0])),//*(a_world[0]-a_filt[0])*(a_world[0]-a_filt[0])
-    //             T(1.0)*(a_world[1]-a_filt[1])/(T(0.0001) +(a_world[1]-a_filt[1])*(a_world[1]-a_filt[1])),//(T(100.01) +(a_world[0]-a_filt[0])*(a_world[0]-a_filt[0])),*(a_world[1]-a_filt[1])*(a_world[1]-a_filt[1])
-    //             T(1.0)*(a_world[2]-a_filt[2])/(T(0.0001) +(a_world[2]-a_filt[2])*(a_world[2]-a_filt[2]));//(T(100.01) +(a_world[0]-a_filt[0])*(a_world[0]-a_filt[0]));*(a_world[2]-a_filt[2])*(a_world[2]-a_filt[2])
-    // a = a_world + da_filt;//0.5*da_filt_prev + 0.5*
-    // a_filt = a_world;
+    Vec3<T> a = this->_stateEstimatorData.result->aWorld+g;
+    // Vec3<T> w1(T(0.0001),T(0.0001),T(0.0001));
+    // Vec3<T> w2(T(0.00001),T(0.00001),T(0.00001));
+    //a_world += Vec3<T> (w1[0]*(a[0]-a_old[0])/(w1[0]+(a[0]-a_old[0])*(a[0]-a_old[0])),//(a[0]-a_old[0])*(a[0]-a_old[0])
+    //                   w1[1]*(a[1]-a_old[1])/(w1[1]+(a[1]-a_old[1])*(a[1]-a_old[1])),//(a[1]-a_old[1])*(a[1]-a_old[1])
+    //                   w1[2]*(a[2]-a_old[2])/(w1[2]+(a[2]-a_old[2])*(a[2]-a_old[2])));//(a[2]-a_old[2])*(a[2]-a_old[2])
+    // da_filt <<  T(1.0)*(a_world[0]-a_filt[0])*(a_world[0]-a_filt[0])*(a_world[0]-a_filt[0])*(a_world[0]-a_filt[0])*(a_world[0]-a_filt[0])/(w2[0] +(a_world[0]-a_filt[0])*(a_world[0]-a_filt[0])*(a_world[0]-a_filt[0])*(a_world[0]-a_filt[0])),
+    //             T(1.0)*(a_world[1]-a_filt[1])*(a_world[1]-a_filt[1])*(a_world[1]-a_filt[1])*(a_world[1]-a_filt[1])*(a_world[1]-a_filt[1])/(w2[1] +(a_world[1]-a_filt[1])*(a_world[1]-a_filt[1])*(a_world[1]-a_filt[1])*(a_world[1]-a_filt[1])),
+    //             T(1.0)*(a_world[2]-a_filt[2])*(a_world[2]-a_filt[2])*(a_world[2]-a_filt[2])*(a_world[2]-a_filt[2])*(a_world[2]-a_filt[2])/(w2[2] +(a_world[2]-a_filt[2])*(a_world[2]-a_filt[2])*(a_world[2]-a_filt[2])*(a_world[2]-a_filt[2]));
+    // a_old = a;
+    // a_filt = a_filt + 0.0*da_filt_prev + 1*da_filt;
+    _a_worldx = _Afd*_a_worldx+_Bfd*a[0];
+    _a_worldy = _Afd*_a_worldx+_Bfd*a[1];
+    _a_worldz = _Afd*_a_worldx+_Bfd*a[2];
+    _a_world[0] = _Cf*_a_worldx;
+    _a_world[1] = _Cf*_a_worldy;
+    _a_world[2] = _Cf*_a_worldz;
+
+    this->_stateEstimatorData.debug->body_info.test1.x = _a_world[0];
+    this->_stateEstimatorData.debug->body_info.test1.y = _a_world[1];
+    this->_stateEstimatorData.debug->body_info.test1.z = _a_world[2];
     // da_filt_prev = da_filt;
+    
     // std::cout << "Error WORLD\n" << a[0] - a_filt[0] <<" " << a[1] - a_filt[1] <<" " << a[2] - a_filt[2] <<"\n";
     // std::cout << "A WORLD\n" << a[0] <<" " << a[1]  <<" " << a[2] <<"\n";
     // std::cout << "A filt WORLD\n" << a_filt[0] <<" " << a_filt[1] <<" " << a_filt[2] <<"\n";
@@ -195,9 +164,9 @@ void LinearKFPositionVelocityEstimator<T>::run()
     Vec4<T> trusts = Vec4<T>::Zero();
     Vec3<T> p0, v0;
     Vec4<T> pzs0;
-    p0 << _xhat[0], _xhat[1], _xhat[2];
-    v0 << _xhat[3], _xhat[4], _xhat[5];
-    pzs0 <<  _xhat[8], _xhat[11], _xhat[14], _xhat[17];
+    p0 << _myxhat[0], _myxhat[1], _myxhat[2];
+    v0 << _myxhat[3], _myxhat[4], _myxhat[5];
+    pzs0 <<  _myxhat[8], _myxhat[11], _myxhat[14], _myxhat[17];
 
     for (int i = 0; i < 4; i++)
     {
@@ -205,8 +174,7 @@ void LinearKFPositionVelocityEstimator<T>::run()
       Quadruped<T>& quadruped = *(this->_stateEstimatorData.legControllerData->quadruped);
       Vec3<T> ph = quadruped.getHipLocation(i); // hip positions relative to CoM
       // hw_i->leg_controller->leg_datas[i].p;
-      Vec3<T> p_rel = ph + this->_stateEstimatorData.legControllerData[i].p; 
-      // Local frame distance from COM to leg(i)
+      Vec3<T> p_rel = ph + this->_stateEstimatorData.legControllerData[i].p; // Local frame distance from COM to leg(i)
       // hw_i->leg_controller->leg_datas[i].v;
 
       // Local frame velocity of leg(i) relative to COM
@@ -223,8 +191,13 @@ void LinearKFPositionVelocityEstimator<T>::run()
       rindex1 = i1;
       rindex2 = 12 + i1;
       rindex3 = 24 + i;
-
-      T trust = T(1);
+      T k = 1;
+      uint8_t contact = (*this->_stateEstimatorData.contactSensor)[0];
+      if (contact) 
+      {
+        k=1;
+      }
+      T trust = T(1)*k;
       T phase = fmin(this->_stateEstimatorData.result->contactEstimate(i), T(1));
       //T trust_window = T(0.25);
       T trust_window = T(0.2);
@@ -234,14 +207,14 @@ void LinearKFPositionVelocityEstimator<T>::run()
       // That could happen because of the big noise/deviations during the contact moment
       if (phase < trust_window)
       {
-        trust = phase / trust_window; // trust from 0 to 1
+        trust = phase / trust_window*k; // trust from 0 to 1
       }
       else if (phase > (T(1) - trust_window)) //  1 > (1- p)tr_w
       {
-        trust = (T(1) - phase) / trust_window; // trust from 1 to 0
+        trust = (T(1) - phase) / trust_window*k; // trust from 1 to 0
       }
       //T high_suspect_number(1000);
-      T high_suspect_number(100);
+      T high_suspect_number(1000);
 
       // printf("Trust %d: %.3f\n", i, trust);
       Q.block(qindex, qindex, 3, 3) = (T(1) + (T(1) - trust) * high_suspect_number) * Q.block(qindex, qindex, 3, 3);
@@ -253,18 +226,21 @@ void LinearKFPositionVelocityEstimator<T>::run()
     
       _ps.segment(i1, 3) = -p_f;
       _vs.segment(i1, 3) =  (1.0f - trust) *v0 + trust * (-dp_f);//
-      pzs(i) =  (1.0f - trust) *(p0(2) + p_f(2)) ;//trust*pzs0(i) +
-      //std::cout <<"pzs("<< i << ") " <<pzs(i)<<" "<<"p0z "<< p0(2)<<" " << "phase " << phase << std::endl;
+      pzs(i) = trust*pzs0(i)*0 + (1.0f - trust) *(p0(2) + p_f(2)) ;//
+      // std::cout <<"pzs("<< i << ") " <<pzs(i)<<" "<<"p0z "<< p0(2)<<" " << "phase " << phase << std::endl;
+      // std::cout <<"pzs("<< i << ") " <<pzs(i)<<" "<<"p0z "<< p0(2)<<" " << "phase " << phase << std::endl;
+      // std::cout <<"pzs("<< i << ") " <<pzs(i)<<" "<<"p0z "<< p0(2)<<" " << "phase " << phase << std::endl;
+
     }
     //std::cout <<"Trusts"<< " " << trusts(0)<< " "<< trusts(1)<< " "<< trusts(2)<< " "<< trusts(3)<< " "<< std::endl;
     
     Eigen::Matrix<T, 28, 1> y;
     y << _ps, _vs, pzs;
-    _xhat = _A * _xhat + _B * a;//
+    _myxhat = _A * _myxhat + _B * a;//_a_world;
     Eigen::Matrix<T, 18, 18> At = _A.transpose();
     Eigen::Matrix<T, 18, 18> Pm = _A * _P * At + Q;
     Eigen::Matrix<T, 18, 28> Ct = _C.transpose();
-    Eigen::Matrix<T, 28, 1> yModel = _C * _xhat;
+    Eigen::Matrix<T, 28, 1> yModel = _C * _myxhat;
     Eigen::Matrix<T, 28, 1> ey = y - yModel;
     // std::cout << yModel[0] << " " << yModel[1] << " " << yModel[2] << std::endl; 
     Eigen::Matrix<T, 28, 28> S = _C * Pm * Ct + R;
@@ -283,8 +259,13 @@ void LinearKFPositionVelocityEstimator<T>::run()
 
     // A has to be invertiable.
     Eigen::Matrix<T, 28, 1> S_ey = S.lu().solve(ey);
-    _xhat += Pm * Ct * S_ey;
-
+    _myxhat += Pm * Ct * S_ey;
+    this->_stateEstimatorData.debug->body_info.test.x = _myxhat[0];
+    this->_stateEstimatorData.debug->body_info.test.y = _myxhat[1];
+    this->_stateEstimatorData.debug->body_info.test.z = _myxhat[2];
+    // std::cout << _myxhat[2] << " ______________ "<<_myxhat[2] << std::endl;
+    // std::cout << _myxhat[2] << " ______________ "<<_myxhat[2] << std::endl;
+    // std::cout << _myxhat[2] << " ______________ "<<_myxhat[2] << std::endl;
     Eigen::Matrix<T, 28, 18> S_C = S.lu().solve(_C);
     _P = (Eigen::Matrix<T, 18, 18>::Identity() - Pm * Ct * S_C) * Pm;
 
@@ -297,25 +278,25 @@ void LinearKFPositionVelocityEstimator<T>::run()
       _P.block(2, 0, 16, 2).setZero();
       _P.block(0, 0, 2, 2) /= T(10);
     }
-
-    this->_stateEstimatorData.result->position = _xhat.block(0, 0, 3, 1);
-    this->_stateEstimatorData.result->vWorld = _xhat.block(3, 0, 3, 1);
-    this->_stateEstimatorData.result->vBody = this->_stateEstimatorData.result->rBody * this->_stateEstimatorData.result->vWorld;
+    // std::cout << _myxhat[2] << std::endl;
+    //this->_stateEstimatorData.result->position = _myxhat.block(0, 0, 3, 1);
+    //this->_stateEstimatorData.result->vWorld = _myxhat.block(3, 0, 3, 1);
+    //this->_stateEstimatorData.result->vBody = this->_stateEstimatorData.result->rBody * this->_stateEstimatorData.result->vWorld;
   }
 }
+template class KFPositionVelocityEstimator<float>;
+template class KFPositionVelocityEstimator<double>;
 
-template class LinearKFPositionVelocityEstimator<float>;
+// /*!
+//  * Run cheater estimator to copy cheater state into state estimate
+//  */
+// template <typename T>
+// void CheaterPositionVelocityEstimator<T>::run()
+// {
+//   this->_stateEstimatorData.result->position = this->_stateEstimatorData.cheaterState->position.template cast<T>();
+//   this->_stateEstimatorData.result->vWorld = this->_stateEstimatorData.result->rBody.transpose().template cast<T>() * this->_stateEstimatorData.cheaterState->vBody.template cast<T>();
+//   this->_stateEstimatorData.result->vBody = this->_stateEstimatorData.cheaterState->vBody.template cast<T>();
+// }
 
-/*!
- * Run cheater estimator to copy cheater state into state estimate
- */
-template<typename T>
-void CheaterPositionVelocityEstimator<T>::run()
-{
-  this->_stateEstimatorData.result->position = this->_stateEstimatorData.cheaterState->position.template cast<T>();
-  this->_stateEstimatorData.result->vWorld = this->_stateEstimatorData.result->rBody.transpose().template cast<T>() *
-                                             this->_stateEstimatorData.cheaterState->vBody.template cast<T>();
-  this->_stateEstimatorData.result->vBody = this->_stateEstimatorData.cheaterState->vBody.template cast<T>();
-}
-
-template class CheaterPositionVelocityEstimator<float>;
+// template class CheaterPositionVelocityEstimator<float>;
+// template class CheaterPositionVelocityEstimator<double>;

@@ -33,6 +33,9 @@ Matrix<fpt, Dynamic, 1> qg;
 
 Matrix<fpt, Dynamic, Dynamic> eye_12h;
 
+Matrix<fpt,Dynamic,1> _U_qp;
+Matrix<fpt,Dynamic,1> _U_qpT;
+
 qpOASES::real_t* H_qpoases;
 qpOASES::real_t* g_qpoases;
 qpOASES::real_t* A_qpoases;
@@ -119,6 +122,10 @@ void resize_qp_mats(s16 horizon)
 {
   int mcount = 0;
   int h2 = horizon * horizon;
+  _U_qp.resize(12 * horizon, Eigen::NoChange);
+  _U_qpT.resize(12 * horizon, Eigen::NoChange);
+
+  mcount += 12 * horizon * 1;
 
   A_qp.resize(13 * horizon, Eigen::NoChange);
   mcount += 13 * horizon * 1;
@@ -152,6 +159,8 @@ void resize_qp_mats(s16 horizon)
 
   A_qp.setZero();
   B_qp.setZero();
+  _U_qp.setZero();
+  _U_qpT.setZero();
   S.setZero();
   X_d.setZero();
   U_b.setZero();
@@ -623,4 +632,24 @@ void crossMatrix(Eigen::MatrixXd& R, const Eigen::VectorXd& omega)
   R(1, 2) = -omega(0);
   R(2, 0) = -omega(1);
   R(2, 1) = omega(0);
+}
+Eigen::Matrix<float, 13, 1>  printcost(problem_setup* setup)
+{
+
+  for (int i=0;i<setup->horizon;i++)
+  {
+    for (int j=0;j<12;j++)
+    {
+      _U_qp(i*12+j) = q_soln[i*12+j];
+    }
+
+  }
+  Eigen::Matrix<float, 13, 1> F;
+  F.setZero();
+  _U_qpT = qH*_U_qp+qg;
+  F(12)= _U_qp.adjoint()*(qH*_U_qp/2+qg);
+  // _U_qp= qH*_U_qp+qg;
+  F.block(0,0,12,1) =0.5*_U_qpT.block(0,0,12,1);
+  // return _U_qp.block(0,0,12,1);
+  return F;
 }

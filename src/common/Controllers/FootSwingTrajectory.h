@@ -10,6 +10,9 @@
 
 #include "cppTypes.h"
 #include <iostream>
+// #include "Controllers/PositionVelocityEstimator.h"
+#include "Controllers/StateEstimatorContainer.h"
+
 
 /*!
  * A foot swing trajectory for a single foot
@@ -28,7 +31,8 @@ public:
     _p.setZero();
     _v.setZero();
     _a.setZero();
-    _height = 0;
+    _highestpoint.setZero();
+    _mode = 0;
   }
 
   /*!
@@ -37,6 +41,21 @@ public:
    */
   void setInitialPosition(Vec3<T> p0) { _p0 = p0; }
 
+  /*!
+   * Set the starting location of the foot
+   * @param stateEstimator stateEstimator  : reference to the estimator data
+   */
+  void setStateEstimatorAdress(StateEstimatorContainer<T>* stateEstimator) { _stateEstimator = stateEstimator; 
+  // std::cout<< "Set State Estimator Adress was completed succesfully!"<< std::endl;
+  }
+
+    /*!
+   * Set the mode for the basis function: 
+   * mode = 0 linear basis function,
+   * mode = 1 square root basis function 
+   * @param mode : the mode of the Modified interpolate function
+   */
+  void setMode(int mode) { _mode = mode; }
   const Vec3<T>& getInitialPosition() { return _p0; }
 
   /*!
@@ -51,9 +70,10 @@ public:
    * @param h : the maximum height of the swing, achieved halfway through the
    * swing
    */
-  void setHeight(T h) { _height = h; }
+  void setHeight(Vec3<T> h) { _highestpoint = h; }
 
-  void computeSwingTrajectoryBezier(T phase, T swingTime);
+  void computeSwingTrajectoryBezier(T phase, T swingTime, T legside);
+  void computeSwingTrajectoryModified(T phase, T swingTime,int mode);
   void computeStairsSwingTrajectoryBezier(T phase, T swingTime);
 
   /*!
@@ -76,7 +96,9 @@ public:
 
 private:
   Vec3<T> _p0, _pf, _p, _v, _a;
-  T _height;
+  StateEstimatorContainer<T>* _stateEstimator = nullptr;
+  Vec3<T> _highestpoint;
+  int _mode;
 };
 
 #endif // CHEETAH_SOFTWARE_FOOTSWINGTRAJECTORY_H

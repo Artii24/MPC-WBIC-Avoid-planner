@@ -1,6 +1,7 @@
-#ifndef CHEETAH_SOFTWARE_CONVEXMPCLOCOMOTION_H
-#define CHEETAH_SOFTWARE_CONVEXMPCLOCOMOTION_H
+#ifndef CHEETAH_SOFTWARE_CONVEXMPCSTAIRSLOCOMOTION_H
+#define CHEETAH_SOFTWARE_CONVEXMPCSTAIRSLOCOMOTION_H
 
+#include "Controllers/DesiredStateCommand.h"
 #include "Gait.h"
 #include "cppTypes.h"
 #include <ControlFSMData.h>
@@ -12,18 +13,21 @@
 #include <visualization_msgs/Marker.h>
 
 #include <cstdio>
+#include <common/metrics/SystemEnergy.h>
+#include <common/metrics/EnergyConsume.h>
+#include <common/metrics/ContactEnergy.h>
 
 using Eigen::Array4f;
 using Eigen::Array4i;
 
-template<typename T>
-struct CMPC_Result
+template <typename T>
+struct CMPC_Result_Stairs
 {
   LegControllerCommand<T> commands[4];
   Vec4<T> contactPhase;
 };
 
-struct CMPC_Jump
+struct CMPC_Jump_Stairs
 {
   static constexpr int START_SEG = 6;
   static constexpr int END_SEG = 0;
@@ -38,7 +42,7 @@ struct CMPC_Jump
   void debug(int seg)
   {
     (void)seg;
-    // printf("[%d] pending %d running %d\n", seg, jump_pending, jump_in_progress);
+    //printf("[%d] pending %d running %d\n", seg, jump_pending, jump_in_progress);
   }
 
   void trigger_pressed(int seg, bool trigger)
@@ -49,7 +53,7 @@ struct CMPC_Jump
       if (!jump_pending && !jump_in_progress)
       {
         jump_pending = true;
-        // printf("jump pending @ %d\n", seg);
+        //printf("jump pending @ %d\n", seg);
       }
     }
     pressed = trigger;
@@ -63,7 +67,7 @@ struct CMPC_Jump
     {
       jump_pending = false;
       jump_in_progress = true;
-      // printf("jump begin @ %d\n", seg);
+      //printf("jump begin @ %d\n", seg);
       seen_end_count = 0;
       last_seg_seen = seg;
       return true;
@@ -78,7 +82,7 @@ struct CMPC_Jump
         {
           seen_end_count = 0;
           jump_in_progress = false;
-          // printf("jump end @ %d\n", seg);
+          //printf("jump end @ %d\n", seg);
           last_seg_seen = seg;
           return false;
         }
@@ -92,15 +96,15 @@ struct CMPC_Jump
   }
 };
 
-class ConvexMPCLocomotion
+class ConvexMPCStairsLocomotion
 {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  ConvexMPCLocomotion(float _dt, int _iterations_between_mpc, ControlFSMData<float>* data);
+  ConvexMPCStairsLocomotion(float _dt, int _iterations_between_mpc, be2r_cmpc_unitree::ros_dynamic_paramsConfig* parameters);
   void initialize();
 
-  template<typename T>
+  template <typename T>
   void run(ControlFSMData<T>& data);
   bool currently_jumping = false;
 
@@ -121,13 +125,6 @@ public:
 
 private:
   void _SetupCommand(ControlFSMData<float>& data);
-  void recompute_timing(int iterations_per_mpc);
-  void updateMPCIfNeeded(int* mpcTable, ControlFSMData<float>& data, bool omniMode);
-  void solveDenseMPC(int* mpcTable, ControlFSMData<float>& data);
-  void solveSparseMPC(int* mpcTable, ControlFSMData<float>& data);
-  void initSparseMPC();
-
-  ControlFSMData<float>* _fsm_data;
 
   float _yaw_turn_rate;
   float _yaw_des;
@@ -140,23 +137,30 @@ private:
   float _z_vel_des = 0.;
 
   // High speed running
+  //float _body_height = 0.34;
   float _body_height = 0.29;
 
   float _body_height_running = 0.29;
   float _body_height_jumping = 0.36;
 
-  int _iterationsBetweenMPC;
-  be2r_cmpc_unitree::ros_dynamic_paramsConfig* _dyn_params = nullptr;
-  int _gait_period;
+  void recompute_timing(int iterations_per_mpc);
+  void updateMPCIfNeeded(int* mpcTable, ControlFSMData<float>& data, bool omniMode);
+  void solveDenseMPC(int* mpcTable, ControlFSMData<float>& data);
+  void solveSparseMPC(int* mpcTable, ControlFSMData<float>& data);
+  void initSparseMPC();
+  int iterationsBetweenMPC;
   int horizonLength;
   int default_iterations_between_mpc;
   float dt;
   float dtMPC;
   int iterationCounter = 0;
+  SystemEnergy Energy;
+  // EnergyConsume Energy;
+  // ContactEnergy Energy;
   Vec3<float> f_ff[4];
   Vec4<float> swingTimes;
   FootSwingTrajectory<float> footSwingTrajectories[4];
-  OffsetDurationGait trotting, bounding, pronking, jumping, galloping, standing, trotRunning, walking, walking2, pacing;
+  OffsetDurationGait trotting, trotting_copy, bounding, pronking, jumping, galloping, standing, trotRunning, walking, walking2, pacing;
   MixedFrequncyGait random, random2;
   Mat3<float> Kp, Kd, Kp_stance, Kd_stance;
   bool firstRun = true;
@@ -171,15 +175,19 @@ private:
   Vec3<float> rpy_comp;
   float x_comp_integral = 0;
   Vec3<float> pFoot[4];
-  CMPC_Result<float> result;
+  CMPC_Result_Stairs<float> result;
   float trajAll[12 * 36];
+  ros::Publisher _pub_des_traj[4];
   ros::NodeHandle _nh;
+  visualization_msgs::Marker marker[4];
+  ros::Publisher _vis_pub[4];
 
-  CMPC_Jump jump_state;
+  be2r_cmpc_unitree::ros_dynamic_paramsConfig* _parameters = nullptr;
+  CMPC_Jump_Stairs jump_state;
 
   vectorAligned<Vec12<double>> _sparseTrajectory;
 
   SparseCMPC _sparseCMPC;
 };
 
-#endif // CHEETAH_SOFTWARE_CONVEXMPCLOCOMOTION_H
+#endif //CHEETAH_SOFTWARE_CONVEXMPCLOCOMOTION_H

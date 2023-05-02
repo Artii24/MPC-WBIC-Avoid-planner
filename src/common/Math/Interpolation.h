@@ -8,6 +8,7 @@
 
 #include <assert.h>
 #include <type_traits>
+#include <cmath>
 
 namespace Interpolate
 {
@@ -64,6 +65,292 @@ y_t cubicBezierSecondDerivative(y_t y0, y_t yf, x_t x)
   return bezier * yDiff;
 }
 
+/*!
+ * Cubic bezier modified interpolation between y0 and yf.  t,x is between 0 and 1
+ * We took the same path but changed the basis function. It was just proportional to phase of the swing. 
+ * Now  we use square root of the phase which output values have the same limits [0,1] but different step. 
+ * That will cause to the speed and acceleration profile and dicrease it before the touch.
+ */
+template <typename y_t, typename x_t>
+y_t cubicBezierSQRT(y_t y0, y_t yf, x_t t) {
+  static_assert(std::is_floating_point<x_t>::value,
+                "must use floating point value");
+  assert(t >= 0 && t <= 1);
+  // t -- is the phase of the swing
+  x_t g = sqrt(x_t(1.2)*t+x_t(0.01))-x_t(0.1); //g(t) -- is a new basis function
+  y_t yDiff = yf - y0;
+  x_t bezier = g * g * g + x_t(3) * (g * g * (x_t(1) - g));//y=f(g(t)) -- Bezie function
+  return y0 + bezier * yDiff;
+}
+
+/*!
+ * Cubic bezier modified interpolation derivative between y0 and yf.  t,x is between 0 and 1
+ * We have to differentiate the Bezie function with new basis function relative to the phase t.
+ * After that we can compare speed of an ussuall Bezie and our modified version. 
+ */
+template <typename y_t, typename x_t>
+y_t cubicBezierFirstDerivativeSQRT(y_t y0, y_t yf, x_t t) {
+  static_assert(std::is_floating_point<x_t>::value,
+                "must use floating point value");
+  assert(t >= 0 && t <= 1);
+   // t -- is the phase of the swing
+  y_t yDiff = yf - y0;
+  x_t g = sqrt(x_t(1.2)*t+x_t(0.01))-x_t(0.1);//g(t) -- is a new basis function
+  //dy/dt = df/dg * dg/dt - differentiation rule
+  x_t df_dg = x_t(6) * g * (x_t(1) - g);
+  x_t dg_dt = x_t(0.6)/sqrt(x_t(1.2)*t+x_t(0.01));
+  x_t bezier = df_dg*dg_dt;
+  return bezier * yDiff;
+}
+
+/*!
+ * Cubic bezier modified interpolation derivative between y0 and yf.  t,x is between 0 and
+ * 1
+ */
+template <typename y_t, typename x_t>
+y_t cubicBezierSecondDerivativeSQRT(y_t y0, y_t yf, x_t t) {
+  static_assert(std::is_floating_point<x_t>::value,
+                "must use floating point value");
+  assert(t >= 0 && t <= 1);
+   // t -- is the phase of the swing
+  y_t yDiff = yf - y0;
+  x_t g = sqrt(x_t(1.2)*t+x_t(0.01))-x_t(0.1); //g(t) -- is a new basis function
+  //d2y/d2t = d2f/d2g * (dg/dt)^2 + df/dg * d2g/d2t - differentiation rule
+  x_t df_dg = x_t(6) * g * (x_t(1) - g);
+  x_t dg_dt = x_t(0.6)/sqrt(x_t(1.2)*t+x_t(0.01));
+  x_t d2f_d2g = (x_t(6) - x_t(12) * g);
+  x_t d2g_d2t = - x_t(0.5)*x_t(0.6)*x_t(1.2)/sqrt((x_t(1.2)*t+x_t(0.01))*(x_t(1.2)*t+x_t(0.01))*(x_t(1.2)*t+x_t(0.01)));
+  x_t bezier =  d2f_d2g * dg_dt*dg_dt + df_dg * d2g_d2t;
+  return bezier * yDiff;
+}
+
+/*!
+ * Cosine interpolation between y0 and yf.  t,x is between 0 and 1
+ * Previous MIT version was the same as cosine function for the Y-axis when we have a symmetry. 
+ * However, when we want to use a new basis function it stops working. 
+ * In the maximum hieght with t =0.5(phase) velocities from the left and right region of t are not equal.
+ * So we need a new interpolate function:
+ *          y = a*cos(w*t + phi) + b
+ */
+template <typename y_t, typename x_t>
+y_t ShiftedSine(y_t y0, y_t yf, y_t h, x_t t) {
+  static_assert(std::is_floating_point<x_t>::value,
+                "must use floating point value");
+  assert(t >= 0 && t <= 1);
+  static_assert(std::is_floating_point<y_t>::value,
+                "must specify input h>0 and yf-y0>=0");
+  assert(h > 0 );//&& yf-y0 >= 0
+  y0 = x_t(0.5)*(yf+y0-abs(yf-y0)); // if yf-y0 < 0 then we mirrored our interpolate function: y0=yf, yf = y0,h = h+abs(yf-y0)
+  yf = x_t(0.5)*(yf+y0+abs(yf-y0));
+  h = h + x_t(0.5)*(abs(yf-y0)-(yf-y0));
+  if (yf-y0 < 0){
+    t = x_t(1) - t;
+  }
+  x_t g = t;
+
+  x_t pi = x_t(acos(-1));
+  x_t phi = pi/x_t(2);
+  y_t a = -h/x_t(2);
+  y_t b = y0 - a;
+  x_t sine = x_t(0);
+  x_t w = x_t(0);
+  if (abs((yf-b)/a) <= 1) {
+    w = 2*pi - asin((yf-b)/a) - phi;
+  };
+  sine = sin(w*g+phi);//y=f(g(t))
+  return b + sine* a;
+}
+
+/*!
+ * Cosine interpolation between y0 and yf.  t,x is between 0 and 1
+ * Previous MIT version was the same as cosine function for the Y-axis when we have a symmetry. 
+ * However, when we want to use a new basis function it stops working. 
+ * In the maximum hieght with t =0.5(phase) velocities from the left and right region of t are not equal.
+ * So we need a new interpolate function:
+ *          y = a*cos(w*t + phi) + b
+ */
+template <typename y_t, typename x_t>
+y_t ShiftedSineFirstDerivative(y_t y0, y_t yf, y_t h, x_t t) {
+  static_assert(std::is_floating_point<x_t>::value,
+                "must use floating point value");
+  assert(t >= 0 && t <= 1);
+  static_assert(std::is_floating_point<y_t>::value,
+                "must specify input h>0 and yf-y0>=0");
+  assert(h > 0);//&& yf-y0 >= 0
+  y0 = x_t(0.5)*(yf+y0-abs(yf-y0)); // if yf-y0 < 0 then we mirrored our interpolate function: y0=yf, yf = y0,h = h+abs(yf-y0)
+  yf = x_t(0.5)*(yf+y0+abs(yf-y0));
+  h = h + x_t(0.5)*(abs(yf-y0)-(yf-y0));
+  if (yf-y0 < 0){
+    t = x_t(1) - t;
+  }
+  x_t g = t;
+  x_t pi = x_t(acos(-1));
+  x_t phi = pi/x_t(2);
+  y_t a = -h/x_t(2);
+  y_t b = y0 - a;
+  x_t sine = x_t(0);
+  x_t w = x_t(0);
+  if (abs((yf-b)/a) <= 1) {
+    w = 2*pi - asin((yf-b)/a) - phi;
+  };
+  sine = w*cos(w*g+phi);//y=f(g(t))
+  return sine* a;
+}
+
+/*!
+ * Cosine interpolation between y0 and yf.  t,x is between 0 and 1
+ * Previous MIT version was the same as cosine function for the Y-axis when we have a symmetry. 
+ * However, when we want to use a new basis function it stops working. 
+ * In the maximum hieght with t =0.5(phase) velocities from the left and right region of t are not equal.
+ * So we need a new interpolate function:
+ *          y = a*cos(w*t + phi) + b
+ */
+
+template <typename y_t, typename x_t>
+y_t ShiftedSineSecondDerivative(y_t y0, y_t yf, y_t h, x_t t) {
+  static_assert(std::is_floating_point<x_t>::value,
+                "must use floating point value");
+  assert(t >= 0 && t <= 1);
+  static_assert(std::is_floating_point<y_t>::value,
+                "must specify input h>0 and yf-y0>=0");
+  assert(h > 0);// && yf-y0 >= 0
+  y0 = x_t(0.5)*(yf+y0-abs(yf-y0)); // if yf-y0 < 0 then we mirrored our interpolate function: y0=yf, yf = y0,h = h+abs(yf-y0)
+  yf = x_t(0.5)*(yf+y0+abs(yf-y0));
+  h = h + x_t(0.5)*(abs(yf-y0)-(yf-y0));
+  if (yf-y0 < 0){
+    t = x_t(1) - t;
+  }
+  x_t g = t;
+  x_t pi = x_t(acos(-1));
+  x_t phi = pi/x_t(2);
+  y_t a = -h/x_t(2);
+  y_t b = y0 - a;
+  x_t sine = x_t(0);
+  x_t w = x_t(0);
+  if (abs((yf-b)/a) <= 1) {
+    w = 2*pi - asin((yf-b)/a) - phi;
+  };
+  sine = -w*w*sin(w*g+phi);//y=f(g(t))
+  return sine* a;
+}
+
+/*!
+ * Cosine interpolation between y0 and yf.  t,x is between 0 and 1
+ * Previous MIT version was the same as cosine function for the Y-axis when we have a symmetry. 
+ * However, when we want to use a new basis function it stops working. 
+ * In the maximum hieght with t =0.5(phase) velocities from the left and right region of t are not equal.
+ * So we need a new interpolate function:
+ *          y = a*cos(w*t + phi) + b
+ */
+template <typename y_t, typename x_t>
+y_t ShiftedSineSQRT(y_t y0, y_t yf, y_t h, x_t t) {
+  static_assert(std::is_floating_point<x_t>::value,
+                "must use floating point value");
+  assert(t >= 0 && t <= 1);
+  static_assert(std::is_floating_point<y_t>::value,
+                "must specify input h>0 and yf-y0>=0");
+  assert(h > 0); // && yf-y0 >= 0
+    y0 = x_t(0.5)*(yf+y0-abs(yf-y0)); // if yf-y0 < 0 then we mirrored our interpolate function: y0=yf, yf = y0,h = h+abs(yf-y0)
+  yf = x_t(0.5)*(yf+y0+abs(yf-y0));
+  h = h + x_t(0.5)*(abs(yf-y0)-(yf-y0));
+  if (yf-y0 < 0){
+    t = x_t(1) - t;
+  }
+  x_t g = sqrt(x_t(1.2)*t+x_t(0.01))-x_t(0.1); //g(t) -- is a new basis function
+  //d2y/d2t = d2f/d2g * (dg/dt)^2 + df/dg * d2g/d2t - differentiation rule
+  x_t pi = x_t(acos(-1));
+  x_t phi = pi/x_t(2);
+  y_t a = -h/x_t(2);
+  y_t b = y0 - a;
+  x_t sine = x_t(0);
+  x_t w = x_t(0);
+  if (abs((yf-b)/a) <= 1) {
+    w = 2*pi - asin((yf-b)/a) - phi;
+  };
+  sine = sin(w*g+phi);//y=f(g(t))
+  return b + sine* a;
+}
+
+/*!
+ * Cosine interpolation between y0 and yf.  t,x is between 0 and 1
+ * Previous MIT version was the same as cosine function for the Y-axis when we have a symmetry. 
+ * However, when we want to use a new basis function it stops working. 
+ * In the maximum hieght with t =0.5(phase) velocities from the left and right region of t are not equal.
+ * So we need a new interpolate function:
+ *          y = a*cos(w*t + phi) + b
+ */
+template <typename y_t, typename x_t>
+y_t ShiftedSineFirstDerivativeSQRT(y_t y0, y_t yf, y_t h, x_t t) {
+  static_assert(std::is_floating_point<x_t>::value,
+                "must use floating point value");
+  assert(t >= 0 && t <= 1);
+  static_assert(std::is_floating_point<y_t>::value,
+                "must specify input h>0 and yf-y0>=0");
+  assert(h > 0); //&& yf-y0 >= 0
+  y0 = x_t(0.5)*(yf+y0-abs(yf-y0)); // if yf-y0 < 0 then we mirrored our interpolate function: y0=yf, yf = y0,h = h+abs(yf-y0)
+  yf = x_t(0.5)*(yf+y0+abs(yf-y0));
+  h = h + x_t(0.5)*(abs(yf-y0)-(yf-y0));
+  if (yf-y0 < 0){
+    t = x_t(1) - t;
+  }
+  x_t g = sqrt(x_t(1.2)*t+x_t(0.01))-x_t(0.1); //g(t) -- is a new basis function
+  //d2y/d2t = d2f/d2g * (dg/dt)^2 + df/dg * d2g/d2t - differentiation rule
+  x_t pi = x_t(acos(-1));
+  x_t phi = pi/x_t(2);
+  y_t a = -h/x_t(2);
+  y_t b = y0 - a;
+  x_t sine = x_t(0);
+  x_t w = x_t(0);
+  if (abs((yf-b)/a) <= 1) {
+    w = 2*pi - asin((yf-b)/a) - phi;
+  };
+  x_t df_dg = w*cos(w*g+phi);//y=f(g(t))
+  x_t dg_dt = x_t(0.6)/sqrt(x_t(1.2)*t+x_t(0.01));
+  sine =  df_dg *dg_dt;
+  return sine* a;
+}
+
+/*!
+ * Cosine interpolation between y0 and yf.  t,x is between 0 and 1
+ * Previous MIT version was the same as cosine function for the Y-axis when we have a symmetry. 
+ * However, when we want to use a new basis function it stops working. 
+ * In the maximum hieght with t =0.5(phase) velocities from the left and right region of t are not equal.
+ * So we need a new interpolate function:
+ *          y = a*cos(w*t + phi) + b
+ */
+
+template <typename y_t, typename x_t>
+y_t ShiftedSineSecondDerivativeSQRT(y_t y0, y_t yf, y_t h, x_t t) {
+  static_assert(std::is_floating_point<x_t>::value,
+                "must use floating point value");
+  assert(t >= 0 && t <= 1);
+  static_assert(std::is_floating_point<y_t>::value,
+                "must specify input h>0 and yf-y0>=0");
+  assert(h > 0);// && yf-y0 >= 0
+  y0 = x_t(0.5)*(yf+y0-abs(yf-y0)); // if yf-y0 < 0 then we mirrored our interpolate function: y0=yf, yf = y0,h = h+abs(yf-y0)
+  yf = x_t(0.5)*(yf+y0+abs(yf-y0));
+  h = h + x_t(0.5)*(abs(yf-y0)-(yf-y0));
+  if (yf-y0 < 0){
+    t = x_t(1) - t;
+  }
+  x_t g = sqrt(x_t(1.2)*t+x_t(0.01))-x_t(0.1); //g(t) -- is a new basis function
+  //d2y/d2t = d2f/d2g * (dg/dt)^2 + df/dg * d2g/d2t - differentiation rule
+  x_t pi = x_t(acos(-1));
+  x_t phi = pi/x_t(2);
+  y_t a = -h/x_t(2);
+  y_t b = y0 - a;
+  x_t sine = x_t(0);
+  x_t w = x_t(0);
+  if (abs((yf-b)/a) <= 1) {
+    w = 2*pi - asin((yf-b)/a) - phi; 
+  };
+  x_t df_dg = w*cos(w*g+phi);
+  x_t dg_dt = x_t(0.6)/sqrt(x_t(1.2)*t+x_t(0.01));
+  x_t d2f_d2g = -w*w*sin(w*g+phi);
+  x_t d2g_d2t = - x_t(0.5)*x_t(0.6)*x_t(1.2)/sqrt((x_t(1.2)*t+x_t(0.01))*(x_t(1.2)*t+x_t(0.01))*(x_t(1.2)*t+x_t(0.01)));
+  sine =  d2f_d2g * dg_dt*dg_dt + df_dg * d2g_d2t;
+  return sine* a;
+}
 } // namespace Interpolate
 
 #endif // PROJECT_INTERPOLATION_H

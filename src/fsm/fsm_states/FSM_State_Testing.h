@@ -3,6 +3,7 @@
 #include "CMPC/CMPC_Locomotion.h"
 #include "FSM_State.h"
 #include <FootSwingTrajectory.h>
+#include <LegController.h>
 #include <Utilities/Timer.h>
 #include <controllers/WBC_Ctrl/LocomotionCtrl/LocomotionCtrl.hpp>
 
@@ -57,4 +58,7 @@ private:
   FootSwingTrajectory<float> footSwingTrajectories[4];
   bool firstSwing[4];
   Vec3<float> pFoot[4];
+  Mat3<float> Kp, Kd, Kp_stance, Kd_stance;
 };
+
+#endif // FSM_STATE_TESTING_H

@@ -44,7 +44,8 @@ void PositionEstimator<T>::run()
   static Vec3<float> vz_filtered2(0, 0, 0);
   // float phase[4];
 
-  Vec3<T> acceleration = this->_stateEstimatorData.result->aWorld;
+  Vec3<T> acceleration = this->_stateEstimatorData.result->aWorld + Vec3<float>(0, 0, -9.81);
+  
   // phase[0] = this->_stateEstimatorData.result->contactEstimate(0);
   // phase[1] = this->_stateEstimatorData.result->contactEstimate(1);
   // phase[2] = this->_stateEstimatorData.result->contactEstimate(2);
@@ -99,16 +100,13 @@ void PositionEstimator<T>::run()
     p_body(2) += v_body(2) * dt;
 
     // cout << "trust: " << trust << endl;
-    // cout << "ac x: " << a_filtered[0] << " y: " << a_filtered[1] << " z: " << a_filtered[2] <<
-    // endl; cout << "vel x: " << v_body[0] << " y: " << v_body[1] << " z: " << v_body[2] << endl;
-    //    cout << "x: " << p_body[0] << " y: " << p_body[1] << " z: " << p_body[2] << endl;
+    // cout << "ac x: " << a_filtered[0] << " y: " << a_filtered[1] << " z: " << a_filtered[2] << endl;
+    // cout << "vel x: " << v_body[0] << " y: " << v_body[1] << " z: " << v_body[2] << endl;
+    //cout << "x: " << p_body[0] << " y: " << p_body[1] << " z: " << p_body[2] << endl;
     // cout << (ros::Time::now() - time_start).toSec() << endl;
-    double vel = this->_stateEstimatorData.result->vWorld[2] - _offset_vel / 500;
-    vel = simpleKalman(vel, dt, 0.1);
-    z += vel * dt + (acc_z * dt * dt) * 0.5;
+    z += vz_filtered2(2) * dt;
     // z += vz_filtered(2) * dt;
-    //    std::cout << "z: " << z << std::endl;
-    this->_stateEstimatorData.result->heightBody = z;
+    //std::cout << "z: " << z << std::endl;
   }
 }
 

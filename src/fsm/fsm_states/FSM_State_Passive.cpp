@@ -49,6 +49,7 @@ void FSM_State_Passive<T>::run()
   }
 
   testTransition();
+  this->_metric->debugPrint();
 }
 
 /**
@@ -95,34 +96,39 @@ FSM_StateName FSM_State_Passive<T>::checkTransition()
   // Switch FSM control mode
   switch ((int)this->_data->userParameters->FSM_State)
   {
-    case K_PASSIVE: // normal c (0)
-      // Normal operation for state based transitions
-      break;
+  case K_PASSIVE: // normal c (0)
+    // Normal operation for state based transitions
+    break;
 
-    case K_JOINT_PD:
-      // Requested switch to joint PD control
-      this->nextStateName = FSM_StateName::JOINT_PD;
-      break;
+  case K_JOINT_PD:
+    // Requested switch to joint PD control
+    this->nextStateName = FSM_StateName::JOINT_PD;
+    break;
+  
+  case K_STAIRS:
+    // Requested switch to joint PD control
+    this->nextStateName = FSM_StateName::STAIRS;
+    break;
 
-    case K_STAND_UP:
-      // Requested switch to joint PD control
-      this->nextStateName = FSM_StateName::STAND_UP;
-      break;
+  case K_STAND_UP:
+    // Requested switch to joint PD control
+    this->nextStateName = FSM_StateName::STAND_UP;
+    break;
+  
+  case K_TESTING:
+    // Requested switch to joint PD control
+    this->nextStateName = FSM_StateName::TESTING;
+    break;
 
-    case K_TESTING:
-      // Requested switch to joint PD control
-      this->nextStateName = FSM_StateName::TESTING;
-      break;
+  case K_RECOVERY_STAND:
+    // Requested switch to joint PD control
+    this->nextStateName = FSM_StateName::RECOVERY_STAND;
+    break;
 
-    case K_RECOVERY_STAND:
-      // Requested switch to joint PD control
-      this->nextStateName = FSM_StateName::RECOVERY_STAND;
-      break;
-
-    default:
-      std::cout << "[CONTROL FSM] Bad Request: Cannot transition from "
-                << K_PASSIVE << " to "
-                << this->_data->userParameters->FSM_State << std::endl;
+  default:
+    std::cout << "[CONTROL FSM] Bad Request: Cannot transition from "
+              << K_PASSIVE << " to "
+              << this->_data->userParameters->FSM_State << std::endl;
   }
 
   // Get the next state

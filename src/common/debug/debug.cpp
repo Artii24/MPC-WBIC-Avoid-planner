@@ -39,12 +39,41 @@ void Debug::_initPublishers()
   _pub_vis_leg_force[3] = _nh.advertise<visualization_msgs::Marker>("/visual/leg3/force", 1);
   _pub_vis_local_body_height = _nh.advertise<visualization_msgs::Marker>("/visual/local_body_height", 1);
 
+  _pub_metric_info = _nh.advertise<unitree_legged_msgs::MetricInfo>("/metric_info", 1);
 #ifdef PUB_IMU_AND_ODOM
   _pub_odom = _nh.advertise<nav_msgs::Odometry>("/odom", 1);
   _pub_imu = _nh.advertise<sensor_msgs::Imu>("/imu", 1);
 #endif
 }
 
+void Debug::updateMetrics()
+{
+  unitree_legged_msgs::MetricInfo data_metric;
+  data_metric.final_leg_cost.w = metric_data.final_leg_cost.operator()(0);
+  data_metric.final_leg_cost.x = metric_data.final_leg_cost.operator()(1);
+  data_metric.final_leg_cost.y = metric_data.final_leg_cost.operator()(2);
+  data_metric.final_leg_cost.z = metric_data.final_leg_cost.operator()(3);
+  
+  data_metric.final_body_cost.w = metric_data.final_body_cost.operator()(0);
+  data_metric.final_body_cost.x = metric_data.final_body_cost.operator()(1);
+  data_metric.final_body_cost.y = metric_data.final_body_cost.operator()(2);
+  data_metric.final_body_cost.z = metric_data.final_body_cost.operator()(3);
+  
+  data_metric.final_cost.w = metric_data.final_cost.operator()(0);
+  data_metric.final_cost.x = metric_data.final_cost.operator()(1);
+  data_metric.final_cost.y = metric_data.final_cost.operator()(2);
+  data_metric.final_cost.z = metric_data.final_cost.operator()(3);
+  for (int legnum = 0;legnum<4;legnum++)
+  {
+    data_metric.gradient_cost.at(legnum).x = metric_data.gradient_cost[legnum](0);
+    data_metric.gradient_cost.at(legnum).y = metric_data.gradient_cost[legnum](1);
+    data_metric.gradient_cost.at(legnum).z = metric_data.gradient_cost[legnum](2);
+    data_metric.gradient_cost.at(legnum).w = std::sqrt(metric_data.gradient_cost[legnum].dot(metric_data.gradient_cost[legnum]));
+  }
+  data_metric.cost = metric_data.mpc_cost;
+  _pub_metric_info.publish(data_metric);
+
+}
 void Debug::updatePlot()
 {
   all_legs_info.header.stamp = ros::Time::now();
@@ -59,8 +88,10 @@ void Debug::updatePlot()
     all_legs_info.leg.at(leg_num).v_error.x = all_legs_info.leg.at(leg_num).v_des.x - all_legs_info.leg.at(leg_num).v_act.x;
     all_legs_info.leg.at(leg_num).v_error.y = all_legs_info.leg.at(leg_num).v_des.y - all_legs_info.leg.at(leg_num).v_act.y;
     all_legs_info.leg.at(leg_num).v_error.z = all_legs_info.leg.at(leg_num).v_des.z - all_legs_info.leg.at(leg_num).v_act.z;
+    all_legs_info.leg.at(leg_num).mpc_force.x = leg_force[leg_num].x;
+    all_legs_info.leg.at(leg_num).mpc_force.y = leg_force[leg_num].y;
+    all_legs_info.leg.at(leg_num).mpc_force.z = leg_force[leg_num].z;
 
-    all_legs_info.leg.at(leg_num).mpc_force = leg_force[leg_num];
   }
 
   body_info.state_error.p.x = body_info.pos_des.x - body_info.pos_act.x;
@@ -81,7 +112,7 @@ void Debug::updatePlot()
 
   _pub_all_legs_info.publish(all_legs_info);
   _pub_body_info.publish(body_info);
-
+  
 #ifdef PUB_IMU_AND_ODOM
   nav_msgs::Odometry odom;
 

@@ -15,6 +15,12 @@
 #include <unitree_legged_msgs/AllLegsInfo.h>
 #include <unitree_legged_msgs/BodyInfo.h>
 #include <unitree_legged_msgs/StateError.h>
+#include <unitree_legged_msgs/MetricInfo.h>
+#include <nav_msgs/Odometry.h>
+#include <sensor_msgs/Imu.h>
+#include <cppTypes.h>
+
+// #include <controllers/convexMPC/Metrics.h>
 #include <visualization_msgs/Marker.h>
 
 using std::cout;
@@ -27,6 +33,15 @@ using std::endl;
 // передается информация в структуры этого класса.
 // В классе реализованы методы для создания и публикации сообщений в
 // ROS, в том числе, для визуализации в rviz.
+struct MetricData
+{ 
+  Vec4<float> final_body_cost; 
+  Vec4<float> final_cost;
+  Vec4<float> final_leg_cost;
+  Vec3<float> gradient_cost[4];
+  float mpc_cost;
+};
+
 class Debug
 {
 public:
@@ -37,6 +52,7 @@ public:
   void tfOdomPublishRS_t265(ros::Time stamp);
   void tfOdomPublish(ros::Time stamp);
   void tfPublish();
+  void updateMetrics();
 
   unitree_legged_msgs::AllLegsInfo all_legs_info = {};
   unitree_legged_msgs::BodyInfo body_info = {};
@@ -55,6 +71,7 @@ public:
   bool is_map_upd_stop;
   ros::Time time_stamp_udp_get;
   double vio_z;
+  MetricData metric_data = {};
 
 private:
   void _init();
@@ -78,6 +95,9 @@ private:
   ros::Publisher _pub_all_legs_info;
   ros::Publisher _pub_odom;
   ros::Publisher _pub_body_info;
+  ros::Publisher _pub_metric_info;
+  // tf::TransformBroadcaster odom_broadcaster;
+  // tf::TransformBroadcaster world_broadcaster;
   ros::Publisher _pub_vis_last_p_stance;
   ros::Publisher _pub_vis_swing_pf;
   ros::Publisher _pub_vis_estimated_stance_plane;

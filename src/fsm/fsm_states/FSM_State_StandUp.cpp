@@ -161,6 +161,7 @@ void FSM_State_StandUp<T>::standUpJointPD()
 
     this->_data->legController->commands[i].forceFeedForward = leg_force;
   }
+  this->_metric->debugPrint();
 }
 
 /**

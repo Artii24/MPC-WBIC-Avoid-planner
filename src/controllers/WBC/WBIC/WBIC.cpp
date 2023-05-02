@@ -260,6 +260,7 @@ void WBIC<T>::_GetSolution(const DVec<T>& qddot, DVec<T>& cmd)
     for (size_t i(0); i < _dim_rf; ++i)
     {
       _data->_Fr[i] = z[i + _dim_floating] + _Fr_des[i];
+      // std::cout<<i<<endl;
     }
 
     tot_tau = WB::A_ * qddot + WB::cori_ + WB::grav_ - _Jc.transpose() * _data->_Fr;

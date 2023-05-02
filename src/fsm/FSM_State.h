@@ -6,6 +6,11 @@
 #include "ControlFSMData.h"
 #include "Controllers/GaitScheduler.h"
 #include "TransitionData.h"
+#include "common/metrics/SystemEnergy.h"
+#include "common/metrics/EnergyConsume.h"
+#include "common/metrics/ContactEnergy.h"
+
+
 
 #include <dynamic_reconfigure/server.h>
 #include <ros/ros.h>
@@ -26,6 +31,7 @@
 #define K_FRONTJUMP 11
 #define K_TESTING 12
 #define K_TESTING_CV 14
+#define K_STAIRS 13
 
 // Specific control states
 #define K_JOINT_PD 51
@@ -56,6 +62,7 @@ enum class FSM_StateName
   TESTING,
   BALANCE_VBL,
   TESTING_CV
+  STAIRS
 };
 
 /**
@@ -105,6 +112,10 @@ public:
 
   // Holds all of the relevant control data
   ControlFSMData<T>* _data;
+  SystemEnergy* _metric;
+  // EnergyConsume* _metric;
+  // ContactEnergy* _metric;
+
 
   // FSM State info
   FSM_StateName stateName;     // enumerated name of the current state
